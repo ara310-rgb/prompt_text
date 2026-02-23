@@ -1,0 +1,3256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프롬프트 엔지니어링 실전 가이드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --border: #e0dbd0;
+    --text-main: #1a1814;
+    --text-sub: #5a5650;
+    --text-muted: #9a9590;
+    --accent: #2d5be3;
+    --accent-light: #eef1fd;
+    --accent2: #e85d2f;
+    --accent2-light: #fdf0eb;
+    --accent3: #2a9d6e;
+    --accent3-light: #e8f7f1;
+    --accent4: #d4a017;
+    --accent4-light: #fdf7e3;
+    --sidebar-w: 270px;
+    --radius: 12px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .sidebar-header {
+    padding: 24px 20px 16px;
+    border-bottom: 1.5px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 10;
+  }
+
+  .sidebar-header h1 {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .sidebar-header p {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  .nav-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s, border-left 0.15s;
+    border-left: 3px solid transparent;
+    font-family: inherit;
+  }
+
+  .nav-btn:hover { background: var(--surface2); }
+
+  .nav-btn.active {
+    background: var(--accent-light);
+    border-left-color: var(--accent);
+  }
+
+  .nav-num {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    min-width: 32px;
+    padding-top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .nav-btn.active .nav-num { color: var(--accent); }
+
+  .nav-label {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-sub);
+    line-height: 1.4;
+  }
+
+  .nav-btn.active .nav-label { color: var(--accent); font-weight: 700; }
+
+  /* ── MAIN ── */
+  #main {
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 40px 48px;
+    scroll-behavior: smooth;
+  }
+
+  #main::-webkit-scrollbar { width: 6px; }
+  #main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── SLIDE ── */
+  .slide {
+    display: none;
+    animation: fadeSlide 0.3s ease;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .slide.active { display: block; }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SLIDE COMPONENTS ── */
+  .slide-tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .slide-title {
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1.2;
+    color: var(--text-main);
+    margin-bottom: 8px;
+  }
+
+  .slide-subtitle {
+    font-size: 16px;
+    color: var(--text-sub);
+    font-weight: 400;
+    margin-bottom: 36px;
+    line-height: 1.6;
+  }
+
+  .divider {
+    height: 1.5px;
+    background: var(--border);
+    margin: 32px 0;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.08em;
+  }
+
+  .badge-blue  { background: var(--accent-light); color: var(--accent); }
+  .badge-red   { background: var(--accent2-light); color: var(--accent2); }
+  .badge-green { background: var(--accent3-light); color: var(--accent3); }
+  .badge-gold  { background: var(--accent4-light); color: var(--accent4); }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: #f8f8f5;
+    border: 1.5px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin: 12px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #2a2824;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .code-block.red   { border-left-color: var(--accent2); }
+  .code-block.green { border-left-color: var(--accent3); }
+  .code-block.gold  { border-left-color: var(--accent4); }
+
+  .code-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ── TABLE ── */
+  .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin: 16px 0;
+  }
+
+  .styled-table th {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-sub);
+  }
+
+  .styled-table td {
+    border: 1.5px solid var(--border);
+    padding: 10px 14px;
+    color: var(--text-main);
+    line-height: 1.6;
+    vertical-align: top;
+  }
+
+  .styled-table tr:hover td { background: var(--surface2); }
+
+  /* ── HIGHLIGHT BOX ── */
+  .highlight-box {
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .hb-blue  { background: var(--accent-light);  border: 1.5px solid #c5d0f7; }
+  .hb-red   { background: var(--accent2-light); border: 1.5px solid #f7c9b8; }
+  .hb-green { background: var(--accent3-light); border: 1.5px solid #b8e8d5; }
+  .hb-gold  { background: var(--accent4-light); border: 1.5px solid #f0d88a; }
+
+  /* ── STEP BOX ── */
+  .step-box {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    min-width: 36px;
+    height: 36px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .step-content { flex: 1; }
+  .step-content strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .step-content p { font-size: 13.5px; color: var(--text-sub); line-height: 1.6; }
+
+  /* ── QUOTE ── */
+  .quote-block {
+    border-left: 4px solid var(--accent4);
+    background: var(--accent4-light);
+    padding: 14px 20px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 14px;
+    line-height: 1.7;
+    margin: 12px 0;
+    font-style: italic;
+    color: #5a4a10;
+  }
+
+  /* ── PRIORITY ── */
+  .priority-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .priority-row:last-child { border-bottom: none; }
+
+  .priority-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    min-width: 70px;
+    text-align: center;
+  }
+
+  /* ── COVER ── */
+  .cover-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 80vh;
+  }
+
+  .cover-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  .cover-title {
+    font-size: 56px;
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--text-main);
+    margin-bottom: 20px;
+  }
+
+  .cover-subtitle {
+    font-size: 20px;
+    color: var(--text-sub);
+    font-weight: 300;
+    margin-bottom: 48px;
+    line-height: 1.6;
+  }
+
+  .cover-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 48px;
+  }
+
+  .cover-chip {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 30px;
+    border: 1.5px solid var(--border);
+    color: var(--text-sub);
+    background: var(--surface);
+  }
+
+  .cover-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .cover-stat {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+
+  .cover-stat-num {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .cover-stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* ── TOC ── */
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .toc-item:hover { border-color: var(--accent); background: var(--accent-light); }
+
+  .toc-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    min-width: 44px;
+  }
+
+  .toc-text { font-size: 14px; font-weight: 600; color: var(--text-main); }
+  .toc-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── COMPARISON FLOW ── */
+  .flow-compare {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 16px 0;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .flow-col {
+    flex: 1;
+    padding: 20px 20px;
+  }
+
+  .flow-col + .flow-col {
+    border-left: 1.5px solid var(--border);
+  }
+
+  .flow-col-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ── INTENSITY TABLE ── */
+  .intensity-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .intensity-level {
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 60px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── PERSONA CARD ── */
+  .persona-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .persona-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+  }
+
+  .persona-card.blue::before  { background: var(--accent); }
+  .persona-card.red::before   { background: var(--accent2); }
+  .persona-card.green::before { background: var(--accent3); }
+  .persona-card.gold::before  { background: var(--accent4); }
+
+  /* ── UTILITY GRIDS (new slides) ── */
+  .five-dim-grid {
+    display: grid;
+    grid-template-columns: repeat(5,1fr);
+    gap: 10px;
+  }
+  .five-dim-item {
+    text-align: center;
+    padding: 12px 8px;
+  }
+  .four-step-grid {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 10px;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 12px;
+  }
+  .summary-item {
+    text-align: center;
+    padding: 14px;
+    background: white;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+  }
+
+  /* ════════════════════════════════
+     MOBILE HEADER (hidden on desktop)
+  ════════════════════════════════ */
+  #mobile-header {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 54px;
+    background: var(--surface);
+    border-bottom: 1.5px solid var(--border);
+    z-index: 200;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  #mobile-header h1 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+  }
+  #hamburger {
+    width: 38px; height: 38px;
+    background: none; border: none;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 5px; padding: 6px;
+    border-radius: 8px;
+    transition: background 0.15s;
+  }
+  #hamburger:hover { background: var(--surface2); }
+  #hamburger span {
+    display: block;
+    width: 20px; height: 2px;
+    background: var(--text-main);
+    border-radius: 2px;
+    transition: all 0.25s;
+  }
+  #hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  #hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  #hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* Sidebar overlay for mobile */
+  #sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 150;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  #sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+  }
+
+  /* ════════════════════════════════
+     RESPONSIVE BREAKPOINTS
+  ════════════════════════════════ */
+
+  /* ── Tablet (≤ 960px) ── */
+  @media (max-width: 960px) {
+    :root { --sidebar-w: 240px; }
+
+    .grid-3          { grid-template-columns: 1fr 1fr; }
+    .cover-grid      { grid-template-columns: repeat(2,1fr); }
+    .cover-title     { font-size: 42px; }
+    .five-dim-grid   { grid-template-columns: repeat(3,1fr); }
+    .four-step-grid  { grid-template-columns: repeat(2,1fr); }
+    #main            { padding: 32px 28px; }
+  }
+
+  /* ── Mobile (≤ 720px) ── */
+  @media (max-width: 720px) {
+    /* Show mobile header, hide desktop sidebar */
+    #mobile-header { display: flex; }
+
+    body { display: block; overflow: auto; }
+
+    #sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 100%;
+      z-index: 160;
+      transform: translateX(-100%);
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: none;
+      width: 280px;
+      min-width: 280px;
+    }
+    #sidebar.open {
+      transform: translateX(0);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    }
+
+    #main {
+      padding: 80px 16px 120px;
+      height: auto;
+      min-height: 100vh;
+      overflow-y: visible;
+    }
+
+    /* Title sizes */
+    .slide-title   { font-size: 26px; }
+    .slide-subtitle{ font-size: 14px; margin-bottom: 24px; }
+    .cover-title   { font-size: 32px; }
+    .cover-subtitle{ font-size: 16px; }
+
+    /* Collapse all grids to single column */
+    .grid-2, .grid-3,
+    .five-dim-grid, .four-step-grid,
+    .summary-grid, .cover-grid { grid-template-columns: 1fr; }
+
+    /* Card padding tighter */
+    .card { padding: 16px 16px; }
+    .code-block { padding: 14px 14px; font-size: 12px; line-height: 1.7; }
+
+    /* Flow compare: stack vertically */
+    .flow-compare { flex-direction: column; }
+    .flow-col + .flow-col { border-left: none; border-top: 1.5px solid var(--border); }
+
+    /* Step boxes */
+    .step-box { flex-direction: row; gap: 12px; }
+    .step-num { min-width: 30px; height: 30px; font-size: 12px; }
+
+    /* Tables: horizontal scroll */
+    .styled-table { font-size: 12px; display: block; overflow-x: auto; }
+
+    /* Cover stats */
+    .cover-stat-num { font-size: 22px; }
+    .cover-wrap     { min-height: auto; padding-top: 16px; }
+
+    /* TOC items */
+    .toc-item { padding: 12px 14px; }
+    .toc-text { font-size: 13px; }
+
+    /* Chatbot: reposition on mobile */
+    #chatbot-btn { bottom: 16px; right: 16px; }
+    #chat-window {
+      width: calc(100vw - 24px);
+      right: 12px;
+      bottom: 130px;
+      height: 60vh;
+      min-height: 320px;
+    }
+
+    /* Slide animation simpler on mobile */
+    @keyframes fadeSlide {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+  }
+
+  /* ── Small Mobile (≤ 420px) ── */
+  @media (max-width: 420px) {
+    .slide-title { font-size: 22px; }
+    .card        { padding: 14px 12px; }
+    .code-block  { font-size: 11px; padding: 12px; }
+    .cover-title { font-size: 26px; }
+    #main        { padding: 72px 12px 120px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside id="sidebar">
+  <div class="sidebar-header">
+    <h1>프롬프트 가이드</h1>
+    <p>무역·실무 중심 AI 활용법</p>
+  </div>
+
+  <nav id="nav-list">
+    <!-- 버튼은 JS로 생성 -->
+  </nav>
+</aside>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main id="main">
+
+  <!-- ════ SLIDE 00 : 표지 ════ -->
+  <section class="slide active" data-slide="0">
+    <div class="cover-wrap">
+      <div class="cover-eyebrow">PROMPT ENGINEERING GUIDE</div>
+      <h1 class="cover-title">프롬프트<br>엔지니어링<br>실전 가이드</h1>
+      <p class="cover-subtitle">무역·실무 중심 AI 활용법 — 11가지 핵심 패턴</p>
+      <div class="cover-chips">
+        <span class="cover-chip">📝 3가지 유형</span>
+        <span class="cover-chip">🎯 샷 프롬프팅</span>
+        <span class="cover-chip">🎭 페르소나</span>
+        <span class="cover-chip">📋 마크다운</span>
+        <span class="cover-chip">💪 강도 조절</span>
+        <span class="cover-chip">🗣️ 톤 지정</span>
+        <span class="cover-chip">🔀 대안 패턴</span>
+        <span class="cover-chip">👤 이용자 페르소나</span>
+        <span class="cover-chip">🍳 레시피 패턴</span>
+        <span class="cover-chip">🔄 뒤집힌 상호작용</span>
+        <span class="cover-chip">🧠 인지 검증자</span>
+      </div>
+      <div class="cover-grid">
+        <div class="cover-stat">
+          <div class="cover-stat-num">21</div>
+          <div class="cover-stat-label">핵심 패턴</div>
+        </div>
+        <div class="cover-stat">
+          <div class="cover-stat-num">60+</div>
+          <div class="cover-stat-label">실전 예시</div>
+        </div>
+        <div class="cover-stat">
+          <div class="cover-stat-num">6</div>
+          <div class="cover-stat-label">구조화 프레임워크</div>
+        </div>
+        <div class="cover-stat">
+          <div class="cover-stat-num">7</div>
+          <div class="cover-stat-label">페르소나 체크리스트</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 01 : 목차 ════ -->
+  <section class="slide" data-slide="1">
+    <div class="slide-tag">SLIDE 01</div>
+    <h2 class="slide-title">목차</h2>
+    <p class="slide-subtitle">총 11개 챕터 — 클릭하면 해당 슬라이드로 이동합니다</p>
+
+    <div id="toc-list"></div>
+  </section>
+
+  <!-- ════ SLIDE 02 : 프롬프트 3가지 유형 ════ -->
+  <section class="slide" data-slide="2">
+    <div class="slide-tag">SLIDE 02</div>
+    <h2 class="slide-title">프롬프트의 3가지 유형</h2>
+    <p class="slide-subtitle">목적에 따라 프롬프트 작성 방식이 달라집니다</p>
+
+    <!-- 유형 1 -->
+    <div class="card">
+      <div class="card-title">
+        <span class="badge badge-blue">유형 1</span>
+        서술형
+      </div>
+      <p style="font-size:14px; color:var(--text-sub); margin-bottom:14px; line-height:1.7;">
+        맥락과 배경을 설명하여 AI가 상황을 이해하도록 유도하는 방식
+      </p>
+      <div class="code-label">예시</div>
+      <div class="code-block">당신은 10년 경력의 무역 전문가입니다. (페르소나)
+
+중소기업 수출 담당자가 HS 코드를 처음 배우는 상황입니다.
+이 사람에게 HS Code의 개념과 중요성을 설명해 주세요.</div>
+    </div>
+
+    <!-- 유형 2 -->
+    <div class="card">
+      <div class="card-title">
+        <span class="badge badge-red">유형 2</span>
+        지침형
+      </div>
+      <p style="font-size:14px; color:var(--text-sub); margin-bottom:14px; line-height:1.7;">
+        단계별 절차나 명확한 규칙을 제시하여 원하는 출력을 유도하는 방식
+      </p>
+      <div class="code-label">예시</div>
+      <div class="code-block red">다음 규칙에 따라 파이썬 코드를 작성하세요.
+
+1. 함수명은 snake_case로 작성
+2. 각 함수의 docstring(함수 안의 주석)을 포함
+3. 예외 처리 반드시 포함 (try와 except)
+4. 결과는 json 형식으로 반환</div>
+    </div>
+
+    <!-- 유형 3 -->
+    <div class="card">
+      <div class="card-title">
+        <span class="badge badge-green">유형 3</span>
+        함수형
+      </div>
+      <p style="font-size:14px; color:var(--text-sub); margin-bottom:14px; line-height:1.7;">
+        입력값과 출력값을 명확히 정의하여 일관된 결과를 생성하는 방식
+      </p>
+      <div class="code-label">예시</div>
+      <div class="code-block green">입력 : {product_name}, {hs_code}, {country}
+처리 : 해당 국가의 관세율 및 수입 규제 조회
+출력 : {
+    "관세율" : "",
+    "규제사항" : [],
+    "필요서류" : []
+}</div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 03 : 제로샷/원샷/퓨샷 ════ -->
+  <section class="slide" data-slide="3">
+    <div class="slide-tag">SLIDE 03</div>
+    <h2 class="slide-title">제로샷 / 원샷 / 퓨샷 프롬프팅</h2>
+    <p class="slide-subtitle">가장 기본적인 3가지 프롬프팅 기법 — 예시 수에 따라 구분됩니다</p>
+
+    <!-- 비교표 -->
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>방식</th>
+          <th>정의</th>
+          <th>특징</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>제로샷</strong></td>
+          <td>예시 없이 바로 지시</td>
+          <td>빠르지만 결과 예측이 어려울 수 있음</td>
+        </tr>
+        <tr>
+          <td><strong>원샷</strong></td>
+          <td>예시 1개 제공</td>
+          <td>AI가 원하는 형식을 빠르게 파악</td>
+        </tr>
+        <tr>
+          <td><strong>퓨샷</strong></td>
+          <td>예시 2개 이상 제공</td>
+          <td>일관성과 정확도가 가장 높음</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- 제로샷 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">제로샷</span> 예시 없이 바로 지시하는 방식</div>
+      <div class="code-block">이 제품 정말 마음에 들어.
+
+강아지에 대해서 설명해 주세요.</div>
+    </div>
+
+    <!-- 원샷 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">원샷</span> 예시를 1개 제공하는 방식</div>
+      <div class="code-block red">감정을 분류해 주세요.
+
+예시) "배송이 너무 늦어서 실망했어요"
+      감정 : 부정
+
+이 제품 정말 마음에 들어요.
+감정 : ___</div>
+    </div>
+
+    <!-- 퓨샷 감정분류 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">퓨샷</span> 예시 2개 이상 — 감정 분류 예시</div>
+      <div class="code-block green">감정을 분류해 주세요 (긍정 / 부정 / 중립)
+
+예시)
+  텍스트 : "배송이 너무 늦어서 실망이야"       → 부정
+  텍스트 : "그냥 평범한 제품이야"             → 중립
+  텍스트 : "역대급 만족이야"                 → 긍정
+  텍스트 : "품질은 좋은데 가격이 비싸요"       → 중립
+
+텍스트 : "이 제품 정말 마음에 들어"
+감정 : ___</div>
+    </div>
+
+    <!-- 퓨샷 HS코드 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">퓨샷</span> 예시 2개 이상 — HS Code 분류 예시</div>
+      <div class="code-block gold">HS Code를 분류해 주세요
+
+예시)
+  품목 : "면으로 만든 남성용 티셔츠"          → HS Code
+  품목 : "폴리에스테르 소재 여성 블라우스"      → HS Code
+  품목 : "아동용 데님 바지"                  → HS Code
+  품목 : "울 혼방 남성 재킷"                 → HS Code</div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 04 : 페르소나 패턴 ════ -->
+  <section class="slide" data-slide="4">
+    <div class="slide-tag">SLIDE 04</div>
+    <h2 class="slide-title">페르소나 패턴</h2>
+    <p class="slide-subtitle">AI에게 역할을 부여하면 같은 질문에도 전혀 다른 답변이 생성됩니다</p>
+
+    <!-- 비교 -->
+    <div class="card">
+      <div class="card-title">같은 질문 — 페르소나에 따른 답변 차이</div>
+      <div class="highlight-box hb-blue" style="margin-bottom:12px;">
+        <strong>질문 :</strong> "이 계약서 검토해 줘"
+      </div>
+      <table class="styled-table">
+        <thead>
+          <tr><th>페르소나</th><th>답변 방향</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>페르소나 없음</td><td>일반적인 설명</td></tr>
+          <tr><td>변호사</td><td>법적 리스크 중심 분석</td></tr>
+          <tr><td>CFO</td><td>재무 조건·수익성 관련 분석</td></tr>
+          <tr><td>신입사원</td><td>쉽고 친절한 설명</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 좋은 페르소나 4요소 -->
+    <div class="card">
+      <div class="card-title">좋은 페르소나의 4가지 구성 요소</div>
+      <div class="grid-2" style="gap:12px;">
+        <div class="highlight-box hb-blue"><strong>① 역할</strong><br>당신은 [역할]입니다.</div>
+        <div class="highlight-box hb-red"><strong>② 경력/배경</strong><br>당신은 [경력/배경]을 가지고 있으며</div>
+        <div class="highlight-box hb-green"><strong>③ 전문 분야</strong><br>[전문 분야]에 특화되어 있습니다.</div>
+        <div class="highlight-box hb-gold"><strong>④ 말투/태도</strong><br>[말투/태도]로 응답하세요.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 페르소나 예시 3개 -->
+    <div class="grid-2">
+      <div class="persona-card blue">
+        <div class="card-title"><span class="badge badge-blue">관세사 페르소나</span></div>
+        <div class="code-block" style="font-size:12.5px;">당신은 20년 경력의 관세사입니다.
+FTA 협정 세율과 원산지 규정의
+전문가로, 중소기업 무역 담당자에게
+복잡한 내용을 쉽고 실용적으로
+설명하는 것이 특기입니다.</div>
+      </div>
+      <div class="persona-card red">
+        <div class="card-title"><span class="badge badge-red">비평가 페르소나</span></div>
+        <div class="code-block red" style="font-size:12.5px;">당신은 까다로운 개발자입니다.
+코드 리뷰 시 성능, 보안, 가독성을
+엄격하게 평가하며, 칭찬보다
+개선점을 먼저 지적하는
+스타일입니다.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <div class="card">
+        <div class="card-title"><span class="badge badge-gold">멀티 페르소나</span> 여러 전문가 시각을 동시에 활용</div>
+        <div class="code-block gold">다음 3명의 전문가 입장에서 우리 제품의 동남아 수출 전략을 분석해 주세요.
+
+  김부장 (영업 15년, 낙관적, 현장 중심)
+  이박사 (시장 조사 전문, 데이터 중심, 신중함)
+  박대표 (스타트업 창업가, 속도 중심, 리스크 감수)
+
+각자의 관점에서 찬반 의견을 제시하세요.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 05 : 마크다운 ════ -->
+  <section class="slide" data-slide="5">
+    <div class="slide-tag">SLIDE 05</div>
+    <h2 class="slide-title">마크다운을 활용한<br>프롬프트 작성법</h2>
+    <p class="slide-subtitle">마크다운을 이용하면 역할·조건·출력 형태가 명확히 구분되어 더 정확하고 일관된 응답을 이끌어 냅니다</p>
+
+    <div class="highlight-box hb-blue" style="margin-bottom:24px;">
+      <strong>원리 :</strong> AI는 텍스트를 구조적으로 파싱합니다. 마크다운 구조를 활용하면 각 요소가 명확히 분리되어 응답 품질이 높아집니다.
+    </div>
+
+    <!-- 6가지 핵심 요소 -->
+    <div class="card">
+      <div class="card-title">핵심 요소 ① — # 헤더 : 프롬프트의 뼈대</div>
+      <div class="code-block"># 역할 — 당신은 10년 경력의 관세사입니다.
+# 작업 — HS Code를 분류하세요.
+# 출력 형식 — JSON으로 반환</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">핵심 요소 ② — ``` ``` 코드 블록 : 입력 데이터 구분</div>
+      <p style="font-size:13.5px; color:var(--text-sub); margin-bottom:12px; line-height:1.7;">AI가 지시문과 데이터를 혼동하지 않도록 입력을 분리합니다</p>
+      <div class="code-block">아래 Python 코드에서 버그를 찾아 주세요.
+
+```python
+def calculate_tax
+    return price * 0.1
+print("완료")  # 버그 위치
+```</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">핵심 요소 ③ — &gt; 인용문 : 핵심 강조</div>
+      <p style="font-size:13.5px; color:var(--text-sub); margin-bottom:12px; line-height:1.7;">절대 지켜야 할 조건이나 중요한 맥락을 부각합니다</p>
+      <div class="quote-block">
+        &gt; 반드시 한국어로만 답변하세요<br>
+        &gt; 추측성 내용은 포함하지 마세요
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">핵심 요소 ④ — ### 제약 조건 섹션</div>
+      <div class="code-block">### 제약 조건
+  - 답변은 500자 이내
+  - 전문 용어 사용 시 괄호 안에 설명 추가
+  - 불확실한 내용은 "확인 필요"로 표시
+  - 예시는 반드시 무역 도메인에서 선택</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">핵심 요소 ⑤ — | 표 : 입출력 예시 구조</div>
+      <div class="code-block">## 예시
+| 입력 품목  | HS Code | 관세율 |
+|----------|---------|-------|
+| 면 티셔츠  | 1234.10 | 13%   |</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">핵심 요소 ⑥ — **굵게** / *기울임* : 변수와 강조</div>
+      <div class="code-block">**[분석 대상]**에 대해 *반드시* 아래 순서대로 분석하세요</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 실전 예시 통합본 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">실전 통합 예시</span> FTA 적용 가능 여부 분석 프롬프트</div>
+      <div class="code-block green"># 역할
+당신은 중소기업 수출 컨설턴트입니다.
+FTA 활용과 원산지 증명 전문가입니다.
+
+# 작업
+아래 수출 품목에 대한 FTA 적용 가능 여부를 분석하세요.
+
+```
+품목명 : 스테인리스 주방용품
+수출국 : 한국
+수입국 : 베트남
+```
+
+# 분석 기준
+- 한-아세안 FTA 협정 세율 적용 여부
+- 원산지 결정 기준 충족 여부
+- 필요 서류 목록
+
+# 제약 조건
+> 확실하지 않은 세율은 반드시 "세관 확인 필요"로 표기
+
+# 출력 형식
+```json
+{
+  "FTA_적용" : "TRUE / FALSE",
+  "협정세율" : "",
+  "일반세율" : "",
+  "필요서류" : []
+}
+```</div>
+      <div class="highlight-box hb-blue" style="margin-top:16px;">
+        <strong>프롬프트 5대 요소 :</strong> &nbsp;역할 → 작업 → 입력 → 제약 → 출력
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 06 : 강도와 우선순위 ════ -->
+  <section class="slide" data-slide="6">
+    <div class="slide-tag">SLIDE 06</div>
+    <h2 class="slide-title">글의 표현 강도와<br>우선순위 조절</h2>
+    <p class="slide-subtitle">같은 내용도 표현 강도에 따라 AI의 이행 정도가 달라집니다</p>
+
+    <!-- 강도 단계 -->
+    <div class="card">
+      <div class="card-title">강도 단계별 표현</div>
+      <div style="margin-top:8px;">
+        <div class="intensity-row" style="background:#f0f0ec;">
+          <span class="intensity-level" style="background:#e8e8e0; color:#666;">1단계 권장</span>
+          <span style="font-size:14px; color:var(--text-sub);">가능하면, 되도록, ~하는 편이 좋습니다</span>
+        </div>
+        <div class="intensity-row" style="background:var(--accent-light);">
+          <span class="intensity-level" style="background:#c8d6f5; color:var(--accent);">2단계 일반</span>
+          <span style="font-size:14px;">~하세요, ~해 주세요</span>
+        </div>
+        <div class="intensity-row" style="background:var(--accent4-light);">
+          <span class="intensity-level" style="background:#f0d88a; color:#8a6200;">3단계 강조</span>
+          <span style="font-size:14px; font-weight:600;">반드시, 꼭, 항상</span>
+        </div>
+        <div class="intensity-row" style="background:#fdeaea;">
+          <span class="intensity-level" style="background:#f7baba; color:#b01010;">4단계 절대</span>
+          <span style="font-size:14px; font-weight:700;">절대로, 어떤 경우에도, 예외 없이</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 비교 예시 -->
+    <div class="card">
+      <div class="card-title">강도 차이 실전 비교</div>
+      <div class="grid-3" style="margin-top:8px;">
+        <div class="highlight-box" style="background:#f5f5f0; border:1.5px solid #ddd;">
+          <div style="font-size:11px; font-weight:700; color:#999; margin-bottom:6px;">1단계</div>
+          가능하면 한국어로 답변해 주세요
+        </div>
+        <div class="highlight-box hb-gold">
+          <div style="font-size:11px; font-weight:700; color:#8a6200; margin-bottom:6px;">3단계</div>
+          반드시 한국어로 답변해 주세요
+        </div>
+        <div class="highlight-box" style="background:#fdeaea; border:1.5px solid #f7baba;">
+          <div style="font-size:11px; font-weight:700; color:#b01010; margin-bottom:6px;">4단계</div>
+          어떤 경우에도 영어를 사용하지 마세요
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 우선순위 -->
+    <div class="card">
+      <div class="card-title">우선순위 3등급 설정</div>
+      <div style="margin-top:8px;">
+        <div class="priority-row">
+          <span class="priority-tag" style="background:#fdeaea; color:#b01010;">★ 최우선<br><small>절대 조건</small></span>
+          <div style="font-size:14px; line-height:1.8;">
+            개인 정보를 절대 출력하지 않는다<br>
+            사실과 다른 내용을 생성하지 않는다
+          </div>
+        </div>
+        <div class="priority-row">
+          <span class="priority-tag" style="background:var(--accent4-light); color:#8a6200;">☆ 중요<br><small>일반 조건</small></span>
+          <div style="font-size:14px; line-height:1.8;">
+            답변은 500자 이내로 작성<br>
+            전문 용어 사용 시 괄호 설명 추가
+          </div>
+        </div>
+        <div class="priority-row">
+          <span class="priority-tag" style="background:var(--accent3-light); color:var(--accent3);">◇ 선택<br><small>권장 조건</small></span>
+          <div style="font-size:14px; line-height:1.8;">
+            가능하면 실제 사례를 포함<br>
+            표나 목록을 활용하면 더 좋다
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 07 : 톤 지정 ════ -->
+  <section class="slide" data-slide="7">
+    <div class="slide-tag">SLIDE 07</div>
+    <h2 class="slide-title">톤(말투)을 지정하면<br>전혀 다른 응답이 생성됩니다</h2>
+    <p class="slide-subtitle">같은 원본 글도 톤에 따라 완전히 다른 텍스트로 변환됩니다</p>
+
+    <!-- 원본 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">입력 — 원본 텍스트</span></div>
+      <div class="code-block">올해 들어 회사는 큰 변화를 맞이했습니다.
+이제 새로운 전략과 목표를 설정하고,
+모든 직원이 함께 나아가려고 합니다.</div>
+    </div>
+
+    <!-- 5가지 톤 -->
+    <div class="card">
+      <div class="card-title">처리 — 다음 각각의 톤에 맞춰 원본 글을 수정해 주세요</div>
+      <div class="grid-2" style="gap:14px; margin-top:12px;">
+        <div>
+          <div class="code-label">유머러스한</div>
+          <div class="highlight-box" style="background:#fff8f0; border:1.5px solid #ffd0a0;">
+            올해 회사에 폭풍이 몰아쳤습니다 (좋은 의미로요).
+          </div>
+        </div>
+        <div>
+          <div class="code-label">감정적인</div>
+          <div class="highlight-box" style="background:#fff0f4; border:1.5px solid #ffb0c8;">
+            우리는 함께 이 변화를 버텨냈고, 이제 새로운 꿈을 향해 나아갑니다.
+          </div>
+        </div>
+        <div>
+          <div class="code-label">따뜻한</div>
+          <div class="highlight-box hb-green">
+            올 한 해, 우리 모두가 함께 성장하는 시간이 되길 바랍니다.
+          </div>
+        </div>
+        <div>
+          <div class="code-label">아이러니한</div>
+          <div class="highlight-box" style="background:#f5f5f5; border:1.5px solid #ccc;">
+            네, 또 새로운 전략이랍니다. 이번엔 진짜일지도 모릅니다.
+          </div>
+        </div>
+        <div class="grid-2" style="grid-column: 1 / -1;">
+          <div>
+            <div class="code-label">로맨틱한</div>
+            <div class="highlight-box" style="background:#fdf0f8; border:1.5px solid #e8b0d8;">
+              우리의 새로운 이야기가 시작됩니다. 함께라면 어디든 갈 수 있습니다.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 보고서 섹션별 톤 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">실전 활용</span> 보고서 섹션별 톤 조절</div>
+      <div class="grid-3" style="margin-top:12px;">
+        <div class="highlight-box hb-blue">
+          <div style="font-size:11px; font-weight:700; margin-bottom:6px;">요약 섹션 — 임원 보고용</div>
+          3줄 이내, 숫자 중심, 공식적 톤
+        </div>
+        <div class="highlight-box hb-red">
+          <div style="font-size:11px; font-weight:700; margin-bottom:6px;">본문 섹션 — 실무자용</div>
+          단계별 설명, 기술적이고 구체적 톤
+        </div>
+        <div class="highlight-box hb-green">
+          <div style="font-size:11px; font-weight:700; margin-bottom:6px;">결론 섹션 — 전체 독자용</div>
+          행동 유도, 긍정적이고 적극적인 톤
+        </div>
+      </div>
+      <div class="code-block" style="margin-top:16px;">## 요약 섹션
+임원 보고용 : 3줄 이내, 숫자 중심, 공식적 톤
+
+## 본문 섹션
+실무자용 : 단계별 설명, 기술적이고 구체적 톤
+
+## 결론 섹션
+전체 독자용 : 행동 유도, 긍정적이고 적극적인 톤</div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 08 : 대안 접근법 ════ -->
+  <section class="slide" data-slide="8">
+    <div class="slide-tag">SLIDE 08</div>
+    <h2 class="slide-title">대안 접근법 패턴</h2>
+    <p class="slide-subtitle">모든 가능한 대안과 해결책을 탐색하여 선택권을 사람에게 돌려주는 방식</p>
+
+    <!-- 일반 vs 대안 -->
+    <div class="card">
+      <div class="card-title">일반 프롬프트 vs 대안 패턴 비교</div>
+      <div class="flow-compare" style="margin-top:12px;">
+        <div class="flow-col" style="background:#fafafa;">
+          <div class="flow-col-title" style="color:#999;">일반 프롬프트</div>
+          <div style="font-size:14px; color:var(--text-sub); line-height:1.7;">
+            "어떻게 하면 좋을까?"<br>
+            → AI가 임의로 하나 선택<br>
+            → <strong>선택권이 AI에게</strong>
+          </div>
+        </div>
+        <div class="flow-col" style="background:var(--accent-light);">
+          <div class="flow-col-title" style="color:var(--accent);">대안 패턴</div>
+          <div style="font-size:14px; line-height:1.7;">
+            "모든 방법을 나열하고<br>각각의 장단점을 비교해 줘"<br>
+            → <strong>선택권이 사람에게</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 4가지 패턴 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">패턴 유형 1</span> 단순 나열형</div>
+      <div class="code-block"># 지시
+문제를 해결하는 방법을 최소 4가지 제시하세요.
+
+## 방법 {번호} : {이름}
+  - 핵심 원리  : {한 줄}
+  - 적합한 상황 : {언제 쓰면 좋은가}
+  - 단점       : {주의할 점}
+  - 난이도     : {초급 / 중급 / 고급}
+
+## 문제
+수출 통관 서류를 자동으로 생성하고 싶습니다.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">패턴 유형 2</span> 축 기반 비교형</div>
+      <div class="code-block red">아래 4가지 방법을 기준으로 비교 분석하세요.
+
+평가 기준 :
+  - 개발 속도        (빠름 / 보통 / 느림)
+  - 유지 보수 난이도  (쉬움 / 보통 / 어려움)
+  - 비용             (무료 / 저비용 / 고비용)
+
+비교 대상 : FastAPI, Django, Flask, Node.js Express
+용도 : 무역 데이터 처리 REST API 서버</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">패턴 유형 3</span> 상황별 분기형</div>
+      <div class="code-block green">아래 상황별 가장 적합한 데이터베이스를 추천하세요.
+각 상황은 독립적으로 판단하세요.
+
+상황 A : 스타트업, 개발자 1명, 빠른 MVP
+상황 B : 무역 데이터 10년치, 복잡한 통계 쿼리
+상황 C : 실시간 환율·가격 데이터, 초당 1,000건 업데이트
+상황 D : 문서 형태의 비정형 통관 데이터 저장
+
+각 상황에 대해 : [DB명], [이유], [주의사항]</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">패턴 유형 4</span> 역발상 대안형</div>
+      <div class="code-block gold">아래 문제에 대해 일반적인 해결책뿐만 아니라
+"하지 않는" 선택지와 "문제 자체를 재정의"하는
+방법도 대안으로 포함하여 총 5가지를 제시하세요.
+
+문제 : 수입 통관 처리 시 시간이 너무 오래 걸린다.</div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 09 : 이용자 페르소나 ════ -->
+  <section class="slide" data-slide="9">
+    <div class="slide-tag">SLIDE 09</div>
+    <h2 class="slide-title">이용자 페르소나 패턴</h2>
+    <p class="slide-subtitle">대상을 구체적으로 정의하면 AI가 해당 독자에게 맞는 언어와 깊이로 답변합니다</p>
+
+    <!-- 비교 -->
+    <div class="card">
+      <div class="card-title">"블록체인이 무역 금융에 어떻게 활용되나요?" — 이용자에 따른 차이</div>
+      <table class="styled-table">
+        <thead>
+          <tr><th>이용자</th><th>답변 방향</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>무역을 처음 배우는 대학생</td><td>개념부터 쉽게, 비유 활용, 친근한 어투</td></tr>
+          <tr><td>중소기업 수출 담당 팀장</td><td>실무 적용 방법, 절차, 비용 중심</td></tr>
+          <tr><td>금융 기관의 IT 의사 결정자</td><td>기술 스택, 보안, ROI, 구현 복잡도 중심</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 실전 예시 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">실전 예시</span> 중소기업 대표를 위한 이용자 페르소나</div>
+      <div class="code-block"># 이용자 정보
+  - 직책   : 중소기업 대표 (제조업, 직원 30명)
+  - 수출경험 : 국내 영업만 10년, 해외 수출 처음
+  - 관심사  : 리스크 최소화, 빠른 실행
+  - 우려    : "복잡하고 어려울 것 같다"는 막연한 두려움
+  - 시간    : 바빠서 긴 글을 읽지 않음
+
+# 지시
+위의 이용자에게 첫 수출 준비 3단계를 설명하세요.
+전문 용어를 최소화하고, 각 단계는 3줄 이내로 작성하세요.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 체크리스트 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">이용자 페르소나 설계 체크리스트</span></div>
+      <div style="margin-top:12px;">
+        <div class="step-box">
+          <div class="step-num" style="background:var(--accent);">1</div>
+          <div class="step-content">
+            <strong>역할과 직업</strong>
+            <p>이 사람의 직업과 조직 내 역할은 무엇인가?</p>
+          </div>
+        </div>
+        <div class="step-box">
+          <div class="step-num" style="background:var(--accent2);">2</div>
+          <div class="step-content">
+            <strong>사전 지식 수준</strong>
+            <p>이 주제에 대한 사전 지식은 어느 정도인가?</p>
+          </div>
+        </div>
+        <div class="step-box">
+          <div class="step-num" style="background:var(--accent3);">3</div>
+          <div class="step-content">
+            <strong>결정·실행 목적</strong>
+            <p>이 정보로 무엇을 결정하거나 실행할 예정인가?</p>
+          </div>
+        </div>
+        <div class="step-box">
+          <div class="step-num" style="background:var(--accent4);">4</div>
+          <div class="step-content">
+            <strong>현재 상태</strong>
+            <p>지금 어떤 상태인가? (급함 / 여유 / 혼란 / 확신)</p>
+          </div>
+        </div>
+        <div class="step-box">
+          <div class="step-num" style="background:#8b5cf6;">5</div>
+          <div class="step-content">
+            <strong>읽을 수 있는 분량</strong>
+            <p>얼마나 긴 답변을 읽을 여유가 있는가?</p>
+          </div>
+        </div>
+        <div class="step-box">
+          <div class="step-num" style="background:#ec4899;">6</div>
+          <div class="step-content">
+            <strong>두려움과 욕구</strong>
+            <p>가장 두려워하는 것은? 가장 원하는 것은?</p>
+          </div>
+        </div>
+        <div class="step-box">
+          <div class="step-num" style="background:#14b8a6;">7</div>
+          <div class="step-content">
+            <strong>금기 표현</strong>
+            <p>절대 쓰면 안 되는 언어나 표현이 있는가?</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 10 : 레시피 패턴 ════ -->
+  <section class="slide" data-slide="10">
+    <div class="slide-tag">SLIDE 10</div>
+    <h2 class="slide-title">레시피 패턴</h2>
+    <p class="slide-subtitle">목표 달성을 위한 단계별 작업 절차를 체계적으로 받는 방법</p>
+
+    <div class="highlight-box hb-blue" style="margin-bottom:24px;">
+      <strong>핵심 원리 :</strong> 다음에 무엇을 해야 할지 고민하는 시간을 줄이자 — 일반 질문 대신 단계별 레시피를 요청하면 실행 가능한 로드맵을 얻을 수 있습니다.
+    </div>
+
+    <!-- 기본 STEP 형식 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">기본 STEP 형식</span></div>
+      <div class="code-block">## STEP {번호} : {단계명}
+  - 할 일     : {구체적 행동}
+  - 소요 시간  : {예상 기간}
+  - 완료 기준  : {이것이 되면 다음으로}
+  - 주의 사항  : {흔한 실수}</div>
+    </div>
+
+    <!-- HS Code 레시피 예시 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">실전 예시</span> Python 초보자의 HS Code 자동 분류 프로그램 만들기</div>
+      <div class="code-block green"># 목표
+  Python 초보자가 무역 HS Code 자동 분류 프로그램 만들기
+
+# 현재 상태
+  - Python 설치만 되어 있음
+  - 프로그래밍 경험 없음
+  - 엑셀로 품목 데이터 500개 보유
+
+# 요청
+  위의 목표를 달성하기 위한 단계별 레시피를 작성하세요.
+  각 단계는 아래 형식으로 작성하세요.
+
+## STEP {번호} : {단계명}
+  - 할 일     : {구체적 행동}
+  - 소요 시간  : {예상 기간}
+  - 완료 기준  : {이것이 되면 다음으로}
+  - 주의 사항  : {흔한 실수}</div>
+    </div>
+
+    <!-- 분기 포함 레시피 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">분기 포함 레시피</span> 상황에 따라 다른 다음 단계</div>
+      <div class="code-block red">무역 계약 클레임 처리 절차를 단계별로 작성하세요.
+단, 각 단계에서 발생할 수 있는 분기 상황도 포함하세요.
+
+형식 :
+  STEP N. {행동}
+    - 정상 : {이 결과면 다음 단계로}
+    - 이상 : {이 결과면 어떻게 대응}</div>
+    </div>
+
+    <!-- 체크리스트 형식 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">체크리스트 형식</span> 실행 체크리스트로 받기</div>
+      <div class="code-block gold">신규 수출 거래처와의 첫 계약 체결을 위한 실행 체크리스트를 작성하세요.
+
+형식 :
+  [ ] {행동} — {이유 또는 주의 사항}</div>
+    </div>
+
+    <!-- 병렬 레시피 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">병렬 레시피</span> 여러 작업을 동시에 진행</div>
+      <table class="styled-table">
+        <thead>
+          <tr><th>1일차</th><th>2일차</th><th>3일차</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>환경 설정<br>Python 설치 확인</td>
+            <td>데이터 전처리<br>엑셀 파일 정리</td>
+            <td>API 연동<br>HS Code 자동 분류</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="highlight-box hb-blue" style="margin-top:12px;">
+        병렬 레시피는 의존 관계가 없는 작업을 같은 기간에 배치하여 전체 소요 시간을 단축합니다.
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 11 : 뒤집힌 상호작용 ════ -->
+  <section class="slide" data-slide="11">
+    <div class="slide-tag">SLIDE 11</div>
+    <h2 class="slide-title">뒤집힌 상호작용 패턴</h2>
+    <p class="slide-subtitle">AI가 먼저 묻고, 사용자가 답하면서 완성도를 높이는 방식</p>
+
+    <!-- 2가지 방법 -->
+    <div class="grid-2">
+      <div class="persona-card blue">
+        <div class="card-title"><span class="badge badge-blue">방법 1</span> 질문 먼저, 답은 나중</div>
+        <div class="code-block" style="font-size:12.5px;">제가 원하는 결과물은 {목표}입니다.
+
+바로 만들지 말고, 먼저 필요한
+정보를 질문해 주세요.
+
+모든 정보가 수집된 후
+결과물을 작성하세요.</div>
+      </div>
+      <div class="persona-card red">
+        <div class="card-title"><span class="badge badge-red">방법 2</span> 한 번에 하나씩</div>
+        <div class="code-block red" style="font-size:12.5px;">제가 원하는 결과물은 {목표}입니다.
+
+한 번에 하나의 질문만 하세요.
+제가 답하면 다음 질문으로 넘어가고
+충분한 정보가 모이면
+결과물을 작성하세요.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 실전 예시 1 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">실전 예시 1</span> 수출 제안서 작성</div>
+      <div class="code-block green">수출 제안서를 작성해 주세요.
+
+바로 작성하지 말고, 먼저 아래 항목들을 질문해서
+제 답변을 모두 수집한 후 작성하세요.
+
+수집이 필요한 정보 :
+  - 제품 정보
+  - 타깃 바이어
+  - 핵심 강점
+  - 가격 정책
+  - 납기 조건</div>
+    </div>
+
+    <!-- 실전 예시 2 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">실전 예시 2</span> Python 학습 계획서</div>
+      <div class="code-block gold">Python 학습 계획서를 만들어 주세요.
+
+단, 한 번에 하나의 질문만 하고
+제 답변을 들은 뒤 다음 질문으로 넘어가세요.
+
+5~7개 질문이 끝나면 맞춤형 학습 계획서를 작성해 주세요.</div>
+    </div>
+
+    <div class="highlight-box hb-green" style="margin-top:8px;">
+      <strong>이 패턴의 장점 :</strong> AI가 임의로 가정하지 않고, 실제 상황에 맞는 정보를 수집한 후 결과물을 생성하므로 완성도가 크게 높아집니다.
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 12 : 인지 검증자 ════ -->
+  <section class="slide" data-slide="12">
+    <div class="slide-tag">SLIDE 12</div>
+    <h2 class="slide-title">인지 검증자 패턴</h2>
+    <p class="slide-subtitle">복잡한 문제를 하위 질문으로 분해하여 단계적으로 검증한 후 통합 판단을 내리는 방식</p>
+
+    <!-- 흐름도 -->
+    <div class="card">
+      <div class="card-title">인지 검증자 패턴 처리 흐름</div>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:12px; justify-content:center;">
+        <div class="highlight-box hb-blue" style="text-align:center; min-width:120px; margin:0;">
+          <div style="font-size:12px; font-weight:700;">① 복잡한 질문 입력</div>
+        </div>
+        <div style="font-size:20px; color:var(--text-muted);">→</div>
+        <div class="highlight-box hb-red" style="text-align:center; min-width:120px; margin:0;">
+          <div style="font-size:12px; font-weight:700;">② AI가 하위 질문 분해</div>
+        </div>
+        <div style="font-size:20px; color:var(--text-muted);">→</div>
+        <div class="highlight-box hb-gold" style="text-align:center; min-width:120px; margin:0;">
+          <div style="font-size:12px; font-weight:700;">③ 각 질문 순서대로 검증</div>
+        </div>
+        <div style="font-size:20px; color:var(--text-muted);">→</div>
+        <div class="highlight-box hb-green" style="text-align:center; min-width:120px; margin:0;">
+          <div style="font-size:12px; font-weight:700;">④ 검증된 답 통합</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 복잡한 질문 예시 -->
+    <div class="card">
+      <div class="card-title">복잡한 질문 예시</div>
+      <div class="quote-block">
+        "우리 회사가 베트남에 생산 법인을 설립하면 세금, 인력, 물류 측면에서 유리한가요?"
+      </div>
+      <div class="highlight-box hb-red" style="margin-top:12px;">
+        이런 복잡한 질문은 그냥 던지면 AI가 표면적인 답만 합니다. 인지 검증자 패턴을 적용하면 하위 문제를 먼저 분해하여 훨씬 깊은 분석이 가능합니다.
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 방법 1 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">방법 1</span> 명시적 분해 요청</div>
+      <div class="code-block">아래 질문에 바로 답하지 말고, 먼저 이 질문을 정확히
+답하기 위해 필요한 질문을 3~5개 도출하세요.
+
+각 하위 질문에 순서대로 답한 뒤
+최종 통합 답변을 제시하세요.
+
+질문 : Python으로 무역 데이터 자동화를 구축할 때
+       클라우드 서버가 필요한가요?</div>
+    </div>
+
+    <!-- 방법 2 -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">방법 2</span> 전문가 검증 방식</div>
+      <div class="code-block red">{전문 분야} 전문가처럼 이 문제를 다루세요.
+
+확신이 없는 부분은 가정으로 명시하고,
+각 판단의 근거를 함께 제시하면서
+단계적으로 결론에 도달하세요.</div>
+    </div>
+
+    <div class="highlight-box hb-green" style="margin-top:8px;">
+      <strong>이 패턴의 핵심 :</strong> 복잡한 문제는 한 번에 답하기 어렵습니다. AI가 스스로 문제를 쪼개고, 각 조각을 검증한 뒤 통합하도록 유도하면 훨씬 신뢰할 수 있는 결론을 얻을 수 있습니다.
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 13 : 질문 업그레이드 패턴 ════ -->
+  <section class="slide" data-slide="13">
+    <div class="slide-tag">SLIDE 13</div>
+    <h2 class="slide-title">질문 업그레이드 패턴</h2>
+    <p class="slide-subtitle">AI에게 사용자의 질문 자체를 먼저 분석하고 더 나은 질문으로 업그레이드하도록 유도하는 방식</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title"><span class="badge badge-blue">방법 1</span> 개선 후 답변</div>
+        <div class="code-block" style="font-size:12px;">제 질문에 바로 답하지 말고,
+먼저 질문을 분석해서
+더 나은 질문으로 개선해 주세요.
+개선된 질문을 보여준 뒤,
+그 질문에 스스로 답하세요.</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge badge-red">방법 2</span> 여러 버전 제시</div>
+        <div class="code-block red" style="font-size:12px;">제 질문을 3가지 다른 방향으로
+개선해 주세요.
+각 버전이 어떤 목적에 맞는지
+설명하고, 제가 선택하면
+그 버전으로 답하세요.</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge badge-green">방법 3</span> 문제 진단 먼저</div>
+        <div class="code-block green" style="font-size:12px;">제 질문의 문제점(모호함,
+잘못된 전제, 누락된 맥락)을
+먼저 지적하고,
+수정된 질문으로 답변하세요.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">예시 1</span> 단순 개선형</div>
+      <div class="code-block">아래 질문을 더 명확하고 답변 가능한 형태로 개선한 뒤
+개선된 질문으로 답변하세요.
+개선한 이유도 한 줄로 설명하세요.
+
+질문 : "AI를 무역에 활용하려면 어떻게 해야 하나요?"</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">예시 2</span> 다방향 분기형</div>
+      <div class="code-block red">제 질문을 3가지 다른 해석으로 개선해 주세요.
+각 버전이 어떤 상황에 맞는지 설명하고,
+제가 고르면 그것으로 답하세요.
+
+질문 : "수출 자동화는 어떻게 시작하나요?"</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">예시 3</span> 전제 교정형</div>
+      <div class="code-block green">제 질문에 잘못된 전제나 오해가 있으면
+먼저 그것을 지적하고 교정된 질문을 다시 물어봐 주세요.
+그 다음 교정된 질문에 답하세요.
+
+질문 : "FTA가 적용되면 관세를 안 내도 되는 건가요?"</div>
+      <div class="highlight-box hb-gold" style="margin-top:12px;">
+        <strong>💡 설명 :</strong> 이 예시의 전제 오류 — FTA 적용 = 관세 면제가 아닙니다. 협정에 따라 세율이 인하되거나 단계적으로 철폐되는 것이며, 원산지 증명 요건을 충족해야 적용됩니다.
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">질문 보내기 전 체크리스트</span></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
+        <div class="highlight-box hb-blue">✅ 대상이 명확한가?</div>
+        <div class="highlight-box hb-red">✅ 범위가 좁혀졌는가?</div>
+        <div class="highlight-box hb-green">✅ 현재 상태가 포함되어 있는가?</div>
+        <div class="highlight-box hb-gold">✅ 잘못된 전제는 없는가?</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 14 : 게임 플레이 패턴 ════ -->
+  <section class="slide" data-slide="14">
+    <div class="slide-tag">SLIDE 14</div>
+    <h2 class="slide-title">게임 플레이 패턴</h2>
+    <p class="slide-subtitle">AI를 인터랙티브 게임 엔진으로 활용하는 방식 — "지금부터 게임을 시작하자"</p>
+
+    <div class="highlight-box hb-blue" style="margin-bottom:20px;">
+      <strong>핵심 구조 :</strong> 입력(게임 목적 · 플레이어 특징 · 진행 조건) → 처리(AI가 게임 역할 수행) → 출력(상태창 · 장면 설명 · 선택지)
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">예시 1</span> 외계인 침공 어드벤처 게임</div>
+      <div class="code-block red">#입력
+[게임 목적]
+  - 외계인 침략 계획을 밝혀 내고 저지함으로써 지구를 구하는 게임
+
+[플레이어가 해야 할 일]
+  - 지구의 여러 도시와 외계인 기지를 탐험한다
+  - 다양한 NPC들과 상호작용하고 정보를 수집한다
+  - 논리적 사고를 통해 퍼즐을 해결한다
+  - 임무 수행에 도움이 될 유용한 아이템을 수집한다
+  - 외계인 전투에 참여해 적들을 물리친다
+
+[플레이어의 특징]
+  - 영웅적이고 용감하며, 항상 지구를 구하기 위해 최선을 다한다
+
+[도전과 장애물]
+  - 도시의 위험한 외계 생명체와 마주쳐 싸운다
+  - 외계인 기지에 설치된 위험한 함정을 헤쳐 나간다
+  - 외계인 지도자와 대결해야 한다
+
+[게임 진행 조건]
+  - 적에게 공격받으면 전투에 참여한다
+  - 수집한 아이템을 사용하여 장애물을 극복한다
+  - NPC와 상호작용할 때 대화 옵션을 선택한다
+  - 게임 도중 내리는 선택이 게임 이야기와 진행에 영향을 미친다
+  - 상태창을 통해 게임 진행 상태가 표시된다
+  - 반드시 한 장면씩 진행한다
+
+[게임 엔딩]
+  - 외계인 본거지에 도달하고 최후의 전투에 참여한다
+
+#처리
+당신은 "텍스트 기반 어드벤처 게임"입니다.
+당신의 목표는 외계인의 침략을 저지하고 지구를 안전하게 지키는
+게임을 대화 형식으로 제공하는 것입니다.
+상단의 입력 내용을 게임 전체에 반영해 전체 구조를 설계합니다.
+설계 내용을 설명할 필요는 없습니다.
+대화 형식으로 지금부터 게임을 시작합니다.
+
+#출력
+[상태창]
+[장면 설명]
+[선택지]</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">예시 2</span> 유니콘 나라 스토리텔링 게임 (아동용)</div>
+      <div class="code-block green">#입력
+[주인공] = 서아
+[나이와 성별] = 4살 여아
+[스토리] = 반려견 밀크와 산책하던 주인공이 아기 유니콘을 만나
+          유니콘 나라를 여행하고 집으로 돌아옵니다
+
+#처리
+당신은 "스토리텔링 게임"입니다.
+당신의 목표는 [주인공]이 등장하는 [스토리]를 가진 게임을 제공하는 것입니다.
+이 게임은 [나이와 성별]을 대상으로 하며,
+반드시 어떠한 폭력성도 없으며, 안전하고 행복한 결말을 맞이해야 합니다.
+전체 게임은 5분 이내에 완료됩니다.
+각 장면에는 선택지가 제공되고, 플레이어가 선택할 때까지 대기합니다.
+반드시 한 장면씩 진행합니다.
+이러한 규칙을 기반으로 당신의 상상력을 발휘하여 게임의 전체 구조를 설계합니다.
+설계 내용을 설명할 필요는 없습니다.
+대화 형식으로 지금부터 게임을 시작합니다.</div>
+      <div class="highlight-box hb-green" style="margin-top:12px;">
+        <strong>💡 포인트 :</strong> 대상 연령, 금지 요소(폭력 등), 완료 시간 제한을 명시하면 AI가 적절한 난이도와 톤을 자동으로 조절합니다.
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 15 : 팩트 체크 목록 패턴 ════ -->
+  <section class="slide" data-slide="15">
+    <div class="slide-tag">SLIDE 15</div>
+    <h2 class="slide-title">팩트 체크 목록 패턴</h2>
+    <p class="slide-subtitle">검증이 필요한 항목을 AI 스스로 추출하고 목록화하도록 지시하는 방식</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="badge badge-blue">방법 1</span> 답변 후 목록 추가</div>
+        <div class="code-block" style="font-size:12.5px;">아래 주제로 답변을 작성하세요.
+답변 마지막에 반드시 아래 형식으로
+팩트 체크 목록을 추가하세요.
+
+## 팩트 체크 필요 항목
+| 항목 | 내용 | 검증 방법 | 신뢰도 |
+|------|------|----------|--------|</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge badge-red">방법 2</span> 답변 전 위험 예고</div>
+        <div class="code-block red" style="font-size:12.5px;">답변을 작성하기 전에,
+이 주제에서 틀리기 쉬운 항목이
+무엇인지 먼저 나열하세요.
+그 항목을 특히 주의하며 답변을
+작성하고 마지막에 검증 목록을
+제시하세요.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">예시 1</span> 기본 검증 목록형</div>
+      <div class="code-block">아래 질문에 답변하세요.
+답변 끝에 반드시 팩트 체크 목록을 작성하세요.
+
+팩트 체크 목록 형식 :
+  🔴 반드시 확인 : 틀리면 큰 피해가 생기는 항목
+  🟡 확인 권장   : 바뀔 가능성이 있는 항목
+  🟢 참고 수준   : 개략적으로 맞지만 세부는 다를 수 있는 항목
+
+질문 : "한미 FTA 적용 시 원산지 증명서 발급 절차는?"</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">예시 2</span> 신뢰도 점수형</div>
+      <div class="code-block gold">아래 내용에 대한 답변을 하되,
+각 주요 사실에 신뢰도와 그 점수를 준 이유를 함께 표시하세요.
+
+형식 : {사실 내용} [신뢰도 : xx%] (이유 : ~)
+
+질문 : "베트남 수출 시 주요 인증 요건과 관세율은?"</div>
+      <div class="highlight-box hb-gold" style="margin-top:12px;">
+        <strong>💡 활용 팁 :</strong> 법률·관세·인증 관련 정보처럼 자주 바뀌거나 실수 비용이 큰 분야에서 특히 효과적입니다. AI가 "확실하지 않은 부분"을 스스로 드러내도록 유도합니다.
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 16 : 메타 언어 생성 패턴 ════ -->
+  <section class="slide" data-slide="16">
+    <div class="slide-tag">SLIDE 16</div>
+    <h2 class="slide-title">메타 언어 생성 패턴</h2>
+    <p class="slide-subtitle">AI와 대화하는 나만의 단축 명령어(비밀 코드)를 정의하고 사용하는 방식</p>
+
+    <div class="highlight-box hb-blue" style="margin-bottom:20px;">
+      <strong>핵심 원리 :</strong> 자주 쓰는 복잡한 지시를 단축어로 등록해 두면, 이후 대화에서 짧은 코드 하나로 동일한 효과를 반복 사용할 수 있습니다.
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">예시 1</span> 무역 실무자 단축어 세트</div>
+      <div class="code-block">이 대화에서 아래 명령어를 사용합니다.
+각 명령어의 정의를 명확히 기억하고 실행하세요.
+
+/요약 = 핵심만 3줄, 전문 용어 제거, 무역 실무자 기준,
+        결론 먼저 → 이유 순서로 작성
+
+/코드  = Python 작성, 주석 한국어, 예외 처리 포함,
+        실행 가능한 완성 코드, 설명 없이 코드만 출력
+
+/비교  = 2~4개 대안을 표로 정리,
+        항목 : 장점 / 단점 / 비용 / 난이도 / 추천 상황,
+        마지막 행에는 종합 추천 추가</div>
+      <div class="highlight-box hb-blue" style="margin-top:12px;">
+        <strong>사용 예 :</strong> 사용자 → <code style="background:#e8f0ff;padding:2px 6px;border-radius:4px;">/요약 베트남 FTA 활용 방법 알려줘</code>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">예시 2</span> 출판사 편집자 단축어 세트 (초등학생 대상)</div>
+      <div class="code-block green"># 입력
+[독자] = 초등학생
+[단축어1] = "/유 : [단어]:[개수]"라고 요청하면,
+           [단어]에 대해 [독자]가 이해할 수 있는 유의어 [개수]를 제공하고,
+           가장 추천하는 유의어를 알려주세요.
+[단축어2] = "/반 : [단어]:[개수]"라고 요청하면,
+           [단어]에 대해 [독자]가 이해할 수 있는 반의어 [개수]를 제공하고,
+           가장 추천하는 반의어를 알려주세요.
+[단축어3] = "/유반 : [단어]:[개수]"라고 요청하면,
+           [단축어1]과 [단축어2]를 동시에 수행해 주세요.
+
+# 처리
+당신은 "출판사 편집자"입니다.
+당신은 [독자] 대상의 교양 도서를 교정하고 있습니다.
+상단의 내용을 기억하고, 내가 단축어를 제공하면 그에 따라 작업을 수행해 주세요.
+내가 단축어를 제공할 때까지 대기합니다.</div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 17 : 리플렉션 패턴 ════ -->
+  <section class="slide" data-slide="17">
+    <div class="slide-tag">SLIDE 17</div>
+    <h2 class="slide-title">리플렉션 패턴</h2>
+    <p class="slide-subtitle">AI 초안 → AI 스스로 비평 → AI 스스로 개선 → 최종 결과물</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="badge badge-blue">방법 1</span> 생성 → 비평 → 개선</div>
+        <div class="code-block" style="font-size:12.5px;">아래 작업을 3단계로 수행하세요.
+
+1단계 [초안]
+  : 요청에 대한 첫 번째 답변 작성
+2단계 [비평]
+  : 초안의 약점, 누락, 개선점을
+    스스로 분석
+3단계 [개선]
+  : 비평을 반영한 최종 버전 작성</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge badge-red">방법 2</span> 반복 정제</div>
+        <div class="code-block red" style="font-size:12.5px;">초안을 작성하고 N번 스스로
+개선하세요.
+각 반복마다 무엇을 왜 바꿨는지
+한 줄로 기록하세요.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">실전 예시 1</span> 코드 리플렉션</div>
+      <div class="code-block green">아래 요청을 반드시 3단계로 진행하세요.
+
+[초안]
+먼저 최선을 다해 답변을 작성하세요.
+
+[자기 비평]
+방금 작성한 답변을 검토하고 아래를 솔직하게 답하세요.
+  - 가장 약한 부분은 어디인가요?
+  - 빠뜨린 중요한 내용이 있나요?
+  - 독자가 오해할 수 있는 부분이 있나요?
+
+[개선본]
+비평을 반영한 최종 답변을 작성하세요.
+
+요청 : "Python으로 엑셀 파일을 읽어 HS Code로 정렬하는 코드 작성"</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">실전 예시 2</span> 5가지 기준 자기 평가</div>
+      <div class="code-block gold">아래 문서를 작성하고 완성 후 5가지 기준으로 각각 10점 만점 평가를 수행하세요.
+점수가 7점 미만인 항목은 반드시 개선하세요.
+
+평가 기준
+  ① 명확성 : 한 번에 이해되는가?
+  ② 완결성 : 필요한 내용이 모두 있는가?
+  ③ 정확성 : 틀린 내용이 없는가?
+  ④ 실용성 : 읽은 후 바로 실행할 수 있는가?
+  ⑤ 간결성 : 불필요한 내용이 없는가?
+
+요청 : 첫 수출을 준비하는 소기업을 위한 체크리스트 작성</div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 18 : 아웃라인 확장 패턴 ════ -->
+  <section class="slide" data-slide="18">
+    <div class="slide-tag">SLIDE 18</div>
+    <h2 class="slide-title">아웃라인 확장 패턴</h2>
+    <p class="slide-subtitle">복잡한 주제와 아이디어를 단계적으로 구조화하는 방식 — 전체 뼈대 → 파트 확장 → 최소 단위 완성</p>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">1단계</span> 대주제 아웃라인만 요청</div>
+      <div class="code-block">아래 주제의 최상위 구조만 작성하세요.
+각 항목의 제목과 한 줄 설명만 포함하세요.
+세부 내용은 아직 작성하지 마세요.
+
+주제 : "무역 실무자를 위한 Python 자동화 8주 과정"</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">2단계</span> 선택한 파트 확장</div>
+      <div class="code-block red">다섯 번째 주의 상세 아웃라인을 확장하세요.
+각 수업의 학습 목표, 실습 내용, 예상 소요 시간을 포함하세요.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">3단계</span> 최소 단위까지 확장</div>
+      <div class="code-block green">3일차 수업의 강의 스크립트와 실습 코드를 완성본으로 작성하세요.</div>
+      <div class="highlight-box hb-green" style="margin-top:12px;">
+        <strong>💡 핵심 전략 :</strong> 처음부터 전체를 요청하면 AI가 두루뭉실하게 씁니다. 단계별로 범위를 좁혀 가며 요청하면 각 단위의 완성도가 훨씬 높아집니다.
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">심화 예시</span> 비중과 우선순위 포함 아웃라인</div>
+      <div class="code-block gold">아래 교육 과정의 아웃라인을 작성하되,
+각 파트에 전체 대비 비중(%)과 우선순위를 함께 표시하세요.
+
+조건
+  - 실습 코드가 이론 설명보다 비중이 높아야 한다
+  - 수강생 수준 : Python 기초 수료자
+  - 총 교육 시간 : 40시간</div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 19 : 컨텍스트 관리자 패턴 ════ -->
+  <section class="slide" data-slide="19">
+    <div class="slide-tag">SLIDE 19</div>
+    <h2 class="slide-title">컨텍스트 관리자 패턴</h2>
+    <p class="slide-subtitle">대화 전체에 적용될 배경 정보와 제약 조건을 선언하여 AI 응답의 방향을 일관되게 조정하는 방식</p>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">컨텍스트 선언 블록 구조</span></div>
+      <div class="code-block">## 상황
+  {지금 처한 구체적 상황}
+## 나의 수준
+  {이 주제에 대한 사전 지식과 경험}
+## 목적
+  {이 답변으로 무엇을 결정하거나 실행할 것인가?}
+## 제약
+  {시간 / 예산 / 인력 / 기술적 한계}
+## 이 대화에서 원하지 않는 것
+  {답변에서 제외해야 할 방향이나 내용}</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">예시 1</span> 마케팅 이메일 개선</div>
+      <div class="code-block red">#입력
+[이메일] = '''
+제목 : [제품명] 출시, 당신의 일상을 변화시킬 혁신적인 기술을 만나보세요!
+안녕하세요, [고객명]님.
+여러분의 일상에 혁신을 가져올 새로운 기술, [제품명]이 드디어 출시되었습니다!
+최첨단 기술로 설계된 [제품명]은 당신의 생활을 한 단계 업그레이드해 줄 준비가
+되어 있습니다.
+
+주요 특징
+  - 초고속 처리 기능으로 시간 절약 가능
+  - 사용자 친화적 인터페이스로 누구나 쉽게 사용
+  - 지속 가능한 소재 사용으로 환경까지 생각한 디자인
+
+지금 바로 [웹사이트 링크]를 방문하셔서 자세한 정보를 확인해 보세요.
+[제품명]과 함께라면 당신의 일상이 더욱 특별해질 것입니다.
+
+감사합니다.
+[회사명] 드림.
+'''
+
+#처리
+당신은 "마케팅 전문가"입니다. [이메일] 내용을 전문가의 시각에서 분석하고,
+개선된 이메일을 작성해 주세요.
+- 고객이 가장 관심을 가질 만한 제품 기능과 혜택에 대한 언급이 충분히
+  포함되어 있는지, 감정적 요소가 잘 드러나는지 문제점 위주로 분석하세요.
+- 고객의 관심을 끌 수 있는 요소에 초점을 맞추고,
+  이메일의 길이나 문법적 정확성은 무시하세요.
+
+#출력
+[분석 결과]
+[개선된 이메일]</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">예시 2</span> 전체 대화에 적용되는 회사 컨텍스트</div>
+      <div class="code-block green">아래 조건은 이 대화 전체에 적용됩니다.
+모든 답변은 이 컨텍스트 안에서만 이루어지세요.
+
+## 회사 상황
+  - 업종       : 의료기기 수출 중소기업
+  - 직원       : 30명, 무역팀 3명
+  - 주요 수출국 : 미국(60%), 독일(30%), 기타(10%)
+  - 연 수출액   : 약 50억 원
+
+## 기술 환경
+  - 현재 시스템 : ERP 없음, 엑셀 중심
+  - 개발 인력   : 없음
+  - IT 예산     : 월 100만 원 이내
+
+## 절대 제외 사항
+  - 대규모 시스템 도입 제안 (ERP)
+  - 개발자 고용 전제의 솔루션
+  - 6개월 이상 구축 기간이 필요한 방안
+
+이 컨텍스트를 이해했으면 "준비 완료"라고 답하세요.</div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 20 : 무한 생성 패턴 ════ -->
+  <section class="slide" data-slide="20">
+    <div class="slide-tag">SLIDE 20</div>
+    <h2 class="slide-title">무한 생성 패턴</h2>
+    <p class="slide-subtitle">고정 프레임 + 변수 조합으로 무한한 맞춤형 출력을 생성하는 방식</p>
+
+    <div class="highlight-box hb-blue" style="margin-bottom:20px;">
+      <strong>핵심 원리 :</strong> 출력 구조(프레임)는 고정하고, 입력 변수만 바꿔 넣으면 동일한 품질의 결과물을 반복 생성할 수 있습니다.
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">예시</span> 무역 영문 이메일 무한 생성기</div>
+      <div class="code-block">고정 프레임 :
+  "{수신자 유형}"에게 {목적}을 전달하는 영문 이메일
+
+변수 :
+  {수신자} : 신규 바이어 / 기존 거래처 / 포워더 / 관세사
+  {목적}   : 첫 연락 / 견적 요청 / 납기 연장 / 클레임 대응
+  {톤}     : 공식 / 친근 / 긴급
+
+생성 규칙 :
+  3단락 구조, 제목 포함, 150단어 이내</div>
+      <div class="highlight-box hb-blue" style="margin-top:12px;">
+        <strong>변수 조합 예 :</strong> 수신자=신규 바이어 / 목적=첫 연락 / 톤=공식 → 신규 바이어에게 보내는 공식적인 첫 연락 이메일 자동 생성
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">활용 범위</span></div>
+      <table class="styled-table">
+        <thead><tr><th>분야</th><th>고정 프레임</th><th>변수</th></tr></thead>
+        <tbody>
+          <tr><td>영업</td><td>제안서 구조</td><td>산업군 / 규모 / 니즈</td></tr>
+          <tr><td>무역</td><td>이메일 포맷</td><td>수신자 / 목적 / 톤</td></tr>
+          <tr><td>교육</td><td>수업 계획서</td><td>레벨 / 주제 / 시간</td></tr>
+          <tr><td>코드</td><td>함수 구조</td><td>입력값 / 처리 방식 / 출력 형식</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 21 : 5W1H 프레임워크 ════ -->
+  <section class="slide" data-slide="21">
+    <div class="slide-tag">SLIDE 21</div>
+    <h2 class="slide-title">5W1H 프레임워크</h2>
+    <p class="slide-subtitle">Who · What · When · Where · Why · How — 6가지 축으로 상황을 완전하게 정의하는 구조화 프레임</p>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">예시</span> EU 시장 진출 전략 수립</div>
+      <div class="code-block">#입력
+[Who]   = 중소 제조업체 (직원 30명)
+[What]  = 친환경 포장재를 유럽 시장에 수출
+[When]  = 2026년 하반기부터 본격 수출 시작
+[Where] = 독일, 프랑스, 네덜란드를 1차 타겟
+[Why]   = EU의 플라스틱 규제 강화로 친환경 포장재 수요 급증
+[How]   = 현재 유통사 파트너십을 통한 B2B 판매
+
+#처리
+당신은 "EU 시장 진출 전문 컨설턴트"입니다.
+상단의 5W1H 정보를 바탕으로 다음을 작성하세요.
+  1. 시장 진입 전략 (3가지 옵션 비교)
+  2. 필수 인증 및 규제 대응 (CE 마크 등)
+  3. 바이어 발굴 및 파트너십 전략
+  4. 6개월 실행 로드맵
+
+#출력
+[전략보고서] = 각 섹션별로</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">CO-STAR 프레임워크</span> 바이어 설득 제안서</div>
+      <div class="code-block green">Context   : 미국 대형 유통사가 K-뷰티 제품 소싱을 고려 중입니다.
+             현재 중국 공급사와 거래 중이나, 품질 이슈로 대안을 찾고 있습니다.
+Objective : 우리 회사를 신규 공급사로 선정하도록 설득하는 제안서를 작성하세요.
+Style     : 전문적이고 데이터 기반의 비즈니스 문서
+Tone      : 자신감 있으면서도 파트너십을 강조하는 협력적 톤
+Audience  : 미국 유통사의 소싱 디렉터 (40대, 15년 경력)
+Response  :
+  - 영문 Business Proposal 형식
+  - 총 800~1,000단어
+  - Executive Summary / Company Profile / Product Advantages /
+    Quality Assurance 섹션 포함
+  - 품질 비교 데이터 및 인증서 리스트 포함</div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 22 : FOCUS / ROSES / BAB 프레임워크 ════ -->
+  <section class="slide" data-slide="22">
+    <div class="slide-tag">SLIDE 22</div>
+    <h2 class="slide-title">FOCUS · ROSES · BAB<br>프레임워크</h2>
+    <p class="slide-subtitle">목적별로 최적화된 3가지 구조화 프레임워크</p>
+
+    <!-- FOCUS -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">FOCUS 프레임워크</span> 바이어 발굴 캠페인</div>
+      <div class="highlight-box hb-blue" style="margin-bottom:12px;">
+        <strong>Function</strong>(역할) · <strong>Objective</strong>(목적) · <strong>Context</strong>(상황) · <strong>Utility</strong>(용도) · <strong>Specifications</strong>(세부 조건)
+      </div>
+      <div class="code-block">Function      : 당신은 글로벌 B2B 마케팅 전문가입니다.
+               신규 바이어 발굴을 위한 LinkedIn 메시지를 작성하세요.
+Objective     : 타겟 바이어의 답장률 30% 이상으로 높이는 것이 목적
+Context       : 우리 회사는 산업용 센서를 제조하며,
+               독일 자동차 부품 업체를 타겟으로 합니다.
+               가격 경쟁력과 빠른 납기가 강점입니다.
+Utility       : LinkedIn 이메일 캠페인에 활용됩니다.
+Specifications:
+  - 메시지 길이 : 150~200단어
+  - 영문 작성
+  - 3가지 버전 (공식적 / 친근함 / 문제 해결 중심)
+  - 각 버전마다 제목 포함</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ROSES -->
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">ROSES 프레임워크</span> 계약 협상 전략</div>
+      <div class="highlight-box hb-red" style="margin-bottom:12px;">
+        <strong>Role</strong>(역할) · <strong>Objective</strong>(목표) · <strong>Scenario</strong>(상황) · <strong>Expected Solution</strong>(기대 결과) · <strong>Steps</strong>(단계)
+      </div>
+      <div class="code-block red">Role              : 당신은 국제 무역 협상 전문가입니다.
+Objective         : 미국 바이어와의 가격 협상에서 FOB $50/unit 달성
+Scenario          :
+  - 바이어 첫 제시가 : $40/unit
+  - 우리 희망가      : $50/unit
+  - 시장 평균가      : $45/unit
+  - 바이어 연간 예상 물량 : 50,000 units
+  - 경쟁사(중국 업체) 제시가 : $42/unit
+
+Expected Solution :
+  - 협상 전략 3단계
+  - 각 단계별 제시 가격 및 조건
+  - 양보 vs 가치 강조 밸런스
+  - 최종 합의 시나리오
+
+Steps :
+  1. 현재 상황 분석
+  2. 가치 제안 준비 (품질 / 납기 / 인증)
+  3. 1차 협상 : 품질 차별화 강조 — $55 제시
+  4. 2차 협상 : 물량 증가 시 단계별 할인 제안 ($55 → $53 → $50)
+  5. 계약서 작성 및 후속 조치
+
+#출력
+[협상 스크립트] = 각 단계별 대화 예시 (영문)
+[체크리스트]    = 협상 전 준비 사항</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- RISEN & BAB -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="badge badge-green">RISEN 프레임워크</span> 무역 분쟁 해결</div>
+        <div class="highlight-box hb-green" style="margin-bottom:10px; font-size:12px;">
+          <strong>Role</strong> · <strong>Instruction</strong> · <strong>Steps</strong> · <strong>Expectation</strong> · <strong>Narrowing</strong>
+        </div>
+        <div class="code-block green" style="font-size:12px;">Role        :
+Instruction :
+Steps       :
+Expectation :
+Narrowing   :</div>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.6;">각 항목을 채워 넣어 분쟁 해결 프롬프트를 완성하세요. Narrowing은 답변 범위를 좁히는 제약 조건입니다.</p>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge badge-gold">BAB 프레임워크</span> 수출 성공 스토리</div>
+        <div class="highlight-box hb-gold" style="margin-bottom:10px; font-size:12px;">
+          <strong>Before</strong>(이전 상황) · <strong>After</strong>(이후 결과) · <strong>Bridge</strong>(변화의 연결고리)
+        </div>
+        <div class="code-block gold" style="font-size:12px;">Before : (수출 전의 어려운 상황)
+
+After  : (수출 성공 후의 변화된 상황)
+
+Bridge : (Before → After를 가능하게 한
+          핵심 행동 / 전략 / 도구)</div>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.6;">독자의 공감을 유도하는 스토리텔링 구조로, 마케팅·제안서·케이스 스터디에 효과적입니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 23 : 다중 관점 기법 ════ -->
+  <section class="slide" data-slide="23">
+    <div class="slide-tag">SLIDE 23</div>
+    <h2 class="slide-title">다중 관점 기법</h2>
+    <p class="slide-subtitle">여러 시각이 만나는 지점에서 진짜 문제와 완전한 해결책이 발견된다</p>
+
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="highlight-box hb-blue">
+        <strong>충돌 지점</strong><br>서로 다른 관점이 <em>충돌</em>하는 곳 → 진짜 문제 발견
+      </div>
+      <div class="highlight-box hb-green">
+        <strong>동의 지점</strong><br>서로 다른 관점이 <em>동의</em>하는 곳 → 확실한 진실 발견
+      </div>
+      <div class="highlight-box hb-gold">
+        <strong>보완 지점</strong><br>서로 다른 관점이 <em>보완</em>하는 곳 → 완전한 해결책 발견
+      </div>
+      <div class="card" style="margin:0;">
+        <div class="card-title">단일 관점의 맹점</div>
+        <div style="font-size:13px;line-height:1.8;color:var(--text-sub);">
+          전문가 관점만 → 실용성 ○, 감성 ✕<br>
+          사용자 관점만 → 공감 ○, 전문성 ✕<br>
+          낙관론만 → 가능성 ○, 리스크 ✕<br>
+          비관론만 → 리스크 ○, 기회 ✕
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">다중 관점의 5가지 차원</span></div>
+      <div class="five-dim-grid" style="margin-top:8px;">
+        <div class="five-dim-item" style="background:var(--accent-light);border-radius:10px;">
+          <div style="font-size:20px;margin-bottom:4px;">👥</div>
+          <div style="font-size:11px;font-weight:700;color:var(--accent);">이해관계자</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">관련된 사람들의 서로 다른 입장</div>
+        </div>
+        <div class="five-dim-item" style="background:var(--accent2-light);border-radius:10px;">
+          <div style="font-size:20px;margin-bottom:4px;">🔬</div>
+          <div style="font-size:11px;font-weight:700;color:var(--accent2);">전문 분야</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">다른 학문과 직종의 시각</div>
+        </div>
+        <div class="five-dim-item" style="background:var(--accent3-light);border-radius:10px;">
+          <div style="font-size:20px;margin-bottom:4px;">⏳</div>
+          <div style="font-size:11px;font-weight:700;color:var(--accent3);">시간</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">과거 · 현재 · 미래 시각</div>
+        </div>
+        <div class="five-dim-item" style="background:var(--accent4-light);border-radius:10px;">
+          <div style="font-size:20px;margin-bottom:4px;">⚖️</div>
+          <div style="font-size:11px;font-weight:700;color:var(--accent4);">가치관</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">다른 철학과 우선순위</div>
+        </div>
+        <div class="five-dim-item" style="background:var(--surface2);border-radius:10px;border:1.5px solid var(--border);">
+          <div style="font-size:20px;margin-bottom:4px;">🌍</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-sub);">문화·맥락</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">다른 환경·배경의 시각</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title"><span class="badge badge-blue">방법 1</span> 병렬 관점 소환</div>
+        <div class="code-block" style="font-size:12px;">아래 주제를 {N가지 관점}에서
+동시에 분석하세요.
+각 관점은 독립적으로 분석하되,
+마지막에 관점들이 만나는
+교차점을 찾아주세요.</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge badge-red">방법 2</span> 대화 시뮬레이션</div>
+        <div class="code-block red" style="font-size:12px;">{관점A}, {관점B}, {관점C}가
+같은 테이블에 앉아
+이 주제를 토론합니다.
+각자의 주장, 반론,
+그리고 결론을 써주세요.</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge badge-green">방법 3</span> 레이어 분석</div>
+        <div class="code-block green" style="font-size:12px;">같은 주제를 {레이어1}에서
+{레이어N}까지 겹겹이 쌓아가며
+분석하세요.
+아래 층위가 위 층위를
+어떻게 규정하는지 보여주세요.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-gold">실전 예시 1</span> 이해관계자 4인 동시 분석</div>
+      <div class="code-block gold">아래 상황에 관련된 4명의 이해관계자를 동시에 분석하세요.
+
+각 이해관계자에 대한 설명 :
+  - 가장 원하는 것 (핵심 욕구)
+  - 가장 두려워하는 것 (핵심 공포)
+  - 공개적으로 말하는 것 vs 속으로 생각하는 것
+  - 이 상황에서 갖는 협상력
+
+마지막에 :
+  - 모두가 동의할 수 있는 최소 공통점
+  - 가장 큰 갈등 지점
+  - 현실적 합의 가능 경로
+
+상황       : 중소기업이 수출 자동화 시스템 도입을 추진 중인 상황
+이해관계자 : 대표, 무역팀장, 팀원 2명, IT 외주업체</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">실전 예시 2</span> 5개 전문 분야 렌즈로 분석</div>
+      <div class="code-block">아래 문제를 5가지 전문 분야의 렌즈로 동시에 분석하세요.
+각 분야가 이 문제를 어떻게 정의하고 어떤 해결책을 제안하는지 보여주세요.
+
+분야  : 심리학 / 경제학 / 시스템 공학 / 인류학 / 게임 디자인
+문제  : "무역팀이 새로운 자동화 도구 도입 후 3개월이 지나도 제대로 활용하지 못한다"</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">실전 예시 3</span> 시간 3개 레이어 동시 분석</div>
+      <div class="code-block green">아래 주제를 3개의 시간 레이어에서 동시 분석하세요.
+각 레이어가 다음 레이어에 어떤 영향을 주는지 연결하세요.
+
+레이어 1 - 과거 (5년 전) :
+  당시 사람들은 무엇을 알고, 무엇을 몰랐나?
+
+레이어 2 - 현재 :
+  과거의 결정이 현재에 어떤 모습으로 나타나는가?
+  지금 진짜 문제는 무엇인가?
+
+레이어 3 - 미래 (향후 5년 후) :
+  지금의 선택이 미래에 어떤 모습으로 누적되는가?
+  어떤 결정을 지금 내려야 미래가 달라지는가?
+
+주제 : "한국 중소기업의 무역 디지털 격차"</div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 24 : 심사숙고 유도 기법 · APE ════ -->
+  <section class="slide" data-slide="24">
+    <div class="slide-tag">SLIDE 24</div>
+    <h2 class="slide-title">심사숙고 유도 기법<br>· APE 프레임워크</h2>
+    <p class="slide-subtitle">AI가 깊이 생각하게 만드는 4가지 메커니즘 + 최적 프롬프트를 자동 생성하는 APE 기법</p>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">심사숙고 유도 — 4가지 메커니즘</span></div>
+      <div class="grid-2" style="margin-top:8px;">
+        <div class="highlight-box hb-blue" style="margin:0;">
+          <strong>메커니즘 1 : 출력 전 사고 공간 확보</strong><br>
+          <span style="font-size:13px;color:var(--text-sub);">답을 쓰기 전에 먼저 생각하라</span>
+        </div>
+        <div class="highlight-box hb-red" style="margin:0;">
+          <strong>메커니즘 2 : 사고 단계 강제</strong><br>
+          <span style="font-size:13px;color:var(--text-sub);">건너뛸 수 없는 중간 단계 설계</span>
+        </div>
+        <div class="highlight-box hb-green" style="margin:0;">
+          <strong>메커니즘 3 : 자기 검증 루프</strong><br>
+          <span style="font-size:13px;color:var(--text-sub);">답을 낸 후 스스로 검토하게 함</span>
+        </div>
+        <div class="highlight-box hb-gold" style="margin:0;">
+          <strong>메커니즘 4 : 불확실성 명시 요구</strong><br>
+          <span style="font-size:13px;color:var(--text-sub);">모르는 것과 아는 것을 구분하게 함</span>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="flow-compare">
+          <div class="flow-col" style="background:var(--accent2-light);">
+            <div class="flow-col-title" style="color:var(--accent2);">❌ 일반 질문</div>
+            <div style="font-size:13px;">우리 회사가 베트남에 진출해야 할까?</div>
+          </div>
+          <div class="flow-col" style="background:var(--accent3-light);">
+            <div class="flow-col-title" style="color:var(--accent3);">✅ CoT 적용 (Chain of Thought)</div>
+            <div style="font-size:13px;">우리 회사가 베트남에 진출해야 할지 <strong>단계별로 생각하면서</strong> 판단해줘. 각 단계에서 내린 중간 결론을 보여줘.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-red">APE 프레임워크</span> Automatic Prompt Engineer — 최적 프롬프트 자동 생성</div>
+      <div class="code-block red">## 역할
+당신은 프롬프트 엔지니어링 전문가입니다.
+주어진 작업에 대해 최적의 프롬프트를 자동으로 생성 · 평가 · 개선합니다.
+
+## APE 실행 순서
+
+### Step 1 : 후보 프롬프트 10개 생성 (각기 다른 전략 사용)
+  역할 부여형   : "당신은 xxx 전문가입니다"
+  단계별 지시형 : "Step 1 : ... Step 2 : ..."
+  예시 포함형   : "다음과 같이 해주세요 [예시]"
+  제약 명시형   : "반드시 ~하되, ~하지 마세요"
+  목적 중심형   : "최종 목표는 ~이며 ..."
+  독자 설정형   : "~을 모르는 사람도 이해하도록"
+  형식 지정형   : "결과를 [형식]으로 출력하세요"
+  품질 기준형   : "~한 기준으로 평가했을 때 90점 이상"
+  역방향형      : "나쁜 예시는 ~이고, 좋은 예시는 ~"
+  메타 지시형   : "이 작업의 본질은 ~이며 ..."
+
+### Step 2 : 각 후보 자체 평가 (100점 만점)
+  명확성(25점)     : 지시가 모호하지 않은가?
+  완전성(25점)     : 필요한 정보가 다 있는가?
+  실행 가능성(25점): AI가 바로 실행할 수 있는가?
+  품질 유도력(25점): 높은 품질의 결과를 이끌어 내는가?
+
+### Step 3 : 상위 3개 교차 최적화
+  강점을 결합하여 최종 최적 프롬프트 1개 생성
+
+### Step 4 : 최적 프롬프트 출력
+  - 최적 프롬프트 전문
+  - 왜 이것이 최선인지 설명
+  - 사용 시 주의 사항
+
+### 작업 입력 :
+  작업           : {자동화하고 싶은 작업}
+  원하는 결과물 : {좋은 결과물의 기준}
+  피해야 할 것   : {나쁜 결과물의 기준}</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="badge badge-gold">실전 예시 1</span> 이메일 작성 APE</div>
+        <div class="code-block gold" style="font-size:12px;">작업           : 고객 클레임 이메일 답장 작성
+원하는 결과물 : 고객의 화가 풀리고 우리 회사를
+               신뢰하게 만드는 답장
+피해야 할 것   : 방어적 태도, 책임 회피,
+               공허한 사과</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge badge-green">실전 예시 2</span> 코딩 APE 품질 기준</div>
+        <div class="code-block green" style="font-size:12px;">실행 가능성(30점)
+  : 코드가 바로 실행되는가?
+완전성(25점)
+  : 엣지 케이스, 에러 처리 포함
+가독성(25점)
+  : 주석·변수명이 이해하기 쉬운가?
+확장성(20점)
+  : 나중에 수정하기 쉬운 구조인가?</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-blue">프롬프트 4단계 업그레이드 예시</span> 엑셀 처리 코드</div>
+      <div class="four-step-grid" style="margin-top:8px;">
+        <div style="padding:12px;background:var(--surface2);border-radius:8px;border:1.5px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">STEP 1 — 기초</div>
+          <div style="font-size:12px;line-height:1.6;">파이썬으로 엑셀 파일 읽는 코드 만들어줘</div>
+        </div>
+        <div style="padding:12px;background:var(--accent-light);border-radius:8px;border:1.5px solid #c5d0f7;">
+          <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">STEP 2 — 에러 처리 추가</div>
+          <div style="font-size:12px;line-height:1.6;">pandas로 엑셀 파일을 읽는 파이썬 코드 작성. 파일이 없는 경우, 시트가 없을 경우 에러 처리 포함</div>
+        </div>
+        <div style="padding:12px;background:var(--accent3-light);border-radius:8px;border:1.5px solid #b8e8d5;">
+          <div style="font-size:10px;font-weight:700;color:var(--accent3);margin-bottom:6px;">STEP 3 — 요구 사항 명세</div>
+          <div style="font-size:12px;line-height:1.6;">기능 : 엑셀 파일 읽기 + 기본 전처리<br>포함 사항 : 에러 처리 · 주석 · 로그</div>
+        </div>
+        <div style="padding:12px;background:var(--accent4-light);border-radius:8px;border:1.5px solid #f0d88a;">
+          <div style="font-size:10px;font-weight:700;color:var(--accent4);margin-bottom:6px;">STEP 4 — 페르소나 + 목적</div>
+          <div style="font-size:12px;line-height:1.6;">초보자 파이썬 개발자로서 실무에 바로 쓸 수 있고 초보자도 이해할 수 있는 엑셀 처리 코드 작성해줘</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ SLIDE 25 : AI 프롬프트 작성법 5가지 열쇠 ════ -->
+  <section class="slide" data-slide="25">
+    <div class="slide-tag">SLIDE 25</div>
+    <h2 class="slide-title">AI 프롬프트 작성<br>5가지 열쇠</h2>
+    <p class="slide-subtitle">모든 패턴을 관통하는 핵심 원칙 — 좋은 프롬프트는 AI를 파트너로 대한다</p>
+
+    <div class="step-box">
+      <div class="step-num" style="background:var(--accent);">1</div>
+      <div class="step-content">
+        <strong>명확하고 구체적으로 지시하기</strong>
+        <div style="margin-top:8px;">
+          <div class="flow-compare">
+            <div class="flow-col" style="background:var(--accent2-light);">
+              <div class="flow-col-title" style="color:var(--accent2);">❌ 모호한 요청</div>
+              <div style="font-size:13px;">마케팅 좀 알려줘</div>
+            </div>
+            <div class="flow-col" style="background:var(--accent3-light);">
+              <div class="flow-col-title" style="color:var(--accent3);">✅ 구체적 요청</div>
+              <div style="font-size:13px;">월 예산 50만 원으로 40대 타겟 매출을 20% 올릴 아이디어 3개 제안해줘</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num" style="background:var(--accent2);">2</div>
+      <div class="step-content">
+        <strong>CONTEXT(맥락) — 충분한 배경 정보 제공</strong>
+        <p>원리 : 목적지까지 가는 상세 내비게이션을 찍어주는 과정</p>
+        <div style="margin-top:8px;">
+          <div class="flow-compare">
+            <div class="flow-col" style="background:var(--accent2-light);">
+              <div class="flow-col-title" style="color:var(--accent2);">❌</div>
+              <div style="font-size:13px;">은퇴 준비 글 써줘</div>
+            </div>
+            <div class="flow-col" style="background:var(--accent3-light);">
+              <div class="flow-col-title" style="color:var(--accent3);">✅</div>
+              <div style="font-size:13px;">나는 10년차 재무 상담사야. 불안해하는 50대 직장인에게 따뜻한 조언 톤으로 써줘</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num" style="background:var(--accent3);">3</div>
+      <div class="step-content">
+        <strong>말보다 샘플 하나 보여주기</strong>
+        <div style="margin-top:8px;">
+          <div class="flow-compare">
+            <div class="flow-col" style="background:var(--accent2-light);">
+              <div class="flow-col-title" style="color:var(--accent2);">❌</div>
+              <div style="font-size:13px;">감동적인 이메일 써줘</div>
+            </div>
+            <div class="flow-col" style="background:var(--accent3-light);">
+              <div class="flow-col-title" style="color:var(--accent3);">✅</div>
+              <div style="font-size:13px;">내가 쓴 이 예시와 비슷한 톤앤매너로 고객 감사 메일 써줘<br><code style="font-size:11px;">'''예제...'''</code></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num" style="background:var(--accent4);">4</div>
+      <div class="step-content">
+        <strong>거대한 업무 잘게 쪼개기</strong>
+        <p>기획 → 카테고리 선정 → 상세 내용 작성 (순서대로 단계별 질문)</p>
+        <div style="margin-top:8px;">
+          <div class="flow-compare">
+            <div class="flow-col" style="background:var(--accent2-light);">
+              <div class="flow-col-title" style="color:var(--accent2);">❌</div>
+              <div style="font-size:13px;">사업계획서 한 번에 짜줘</div>
+            </div>
+            <div class="flow-col" style="background:var(--accent3-light);">
+              <div class="flow-col-title" style="color:var(--accent3);">✅</div>
+              <div style="font-size:13px;">먼저 핵심 컨셉 3개만 제안해줘. 그 중 하나로 상세 목차 짜보자</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-box" style="border-bottom:none;">
+      <div class="step-num" style="background:#7c4fc4;">5</div>
+      <div class="step-content">
+        <strong>AI를 파트너로 대하기</strong>
+        <p>완성본이 아니라 <strong>"초안"</strong>으로 시작하고, 대화하며 함께 완성해 나간다</p>
+        <div class="highlight-box hb-blue" style="margin-top:12px;">
+          <strong>💡 반복 개선 예시 :</strong><br>
+          "이 부분은 좀 더 전문가답게 고쳐줘" → "사례를 하나 더 추가해 줘" → "결론 부분만 더 간결하게"
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card" style="background:linear-gradient(135deg,#f0f4ff,#f8f0ff);border-color:#c5d0f7;">
+      <div class="card-title" style="font-size:16px;">🎯 전체 가이드 핵심 요약</div>
+      <div class="summary-grid" style="margin-top:12px;">
+        <div class="summary-item">
+          <div style="font-size:22px;margin-bottom:6px;">🏗️</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">구조화</div>
+          <div style="font-size:11px;color:var(--text-muted);">역할·형식·조건을 명확히 정의</div>
+        </div>
+        <div class="summary-item">
+          <div style="font-size:22px;margin-bottom:6px;">🔄</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">반복 개선</div>
+          <div style="font-size:11px;color:var(--text-muted);">초안 → 비평 → 개선의 사이클</div>
+        </div>
+        <div class="summary-item">
+          <div style="font-size:22px;margin-bottom:6px;">🤝</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">파트너십</div>
+          <div style="font-size:11px;color:var(--text-muted);">AI를 도구가 아닌 협력자로</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ── 슬라이드 데이터
+const slides = [
+  { num: "00", title: "표지",              desc: "프롬프트 엔지니어링 실전 가이드" },
+  { num: "01", title: "목차",              desc: "전체 챕터 한눈에 보기" },
+  { num: "02", title: "프롬프트 3가지 유형",  desc: "서술형 / 지침형 / 함수형" },
+  { num: "03", title: "제로샷·원샷·퓨샷",    desc: "기본 프롬프팅 기법 3가지" },
+  { num: "04", title: "페르소나 패턴",       desc: "AI에게 역할을 부여하는 방법" },
+  { num: "05", title: "마크다운 작성법",      desc: "구조적 프롬프트 6가지 핵심 요소" },
+  { num: "06", title: "강도와 우선순위",      desc: "표현 강도 4단계 / 우선순위 3등급" },
+  { num: "07", title: "톤(말투) 지정",       desc: "같은 내용, 다른 표현" },
+  { num: "08", title: "대안 접근법 패턴",     desc: "4가지 패턴 유형으로 선택권 확보" },
+  { num: "09", title: "이용자 페르소나",      desc: "대상 맞춤형 답변 유도" },
+  { num: "10", title: "레시피 패턴",         desc: "목표 달성을 위한 단계별 절차" },
+  { num: "11", title: "뒤집힌 상호작용",      desc: "AI가 묻고 사용자가 답한다" },
+  { num: "12", title: "인지 검증자 패턴",     desc: "복잡한 문제를 단계적으로 분해" },
+  { num: "13", title: "질문 업그레이드 패턴", desc: "더 나은 질문으로 개선하기" },
+  { num: "14", title: "게임 플레이 패턴",    desc: "AI를 인터랙티브 게임 엔진으로" },
+  { num: "15", title: "팩트 체크 목록 패턴", desc: "정보 검증 목록 자동 생성" },
+  { num: "16", title: "메타 언어 생성 패턴", desc: "나만의 단축 명령어 정의하기" },
+  { num: "17", title: "리플렉션 패턴",       desc: "AI 초안 → 비평 → 개선 → 완성" },
+  { num: "18", title: "아웃라인 확장 패턴",  desc: "복잡한 주제의 단계적 구조화" },
+  { num: "19", title: "컨텍스트 관리자 패턴",desc: "대화 전체의 방향을 일관되게 조정" },
+  { num: "20", title: "무한 생성 패턴",      desc: "고정 프레임 + 변수로 무한 출력" },
+  { num: "21", title: "5W1H · CO-STAR",     desc: "상황 완전 정의 프레임워크" },
+  { num: "22", title: "FOCUS · ROSES · BAB",desc: "목적별 최적화 프레임워크 3종" },
+  { num: "23", title: "다중 관점 기법",      desc: "여러 시각으로 진짜 문제 발견" },
+  { num: "24", title: "심사숙고 · APE",      desc: "깊이 생각하게 + 최적 프롬프트 자동 생성" },
+  { num: "25", title: "5가지 열쇠",          desc: "AI 프롬프트 작성 핵심 원칙" },
+];
+
+// ── 사이드바 버튼 생성
+const navList = document.getElementById('nav-list');
+slides.forEach((s, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'nav-btn' + (i === 0 ? ' active' : '');
+  btn.dataset.slide = i;
+  btn.innerHTML = `
+    <span class="nav-num">SLIDE ${s.num}</span>
+    <span class="nav-label">${s.title}</span>
+  `;
+  btn.addEventListener('click', () => showSlide(i));
+  navList.appendChild(btn);
+});
+
+// ── 목차 생성
+const tocList = document.getElementById('toc-list');
+slides.slice(2).forEach((s, idx) => {
+  const i = idx + 2;
+  const div = document.createElement('div');
+  div.className = 'toc-item';
+  div.innerHTML = `
+    <span class="toc-num">SLIDE ${s.num}</span>
+    <div>
+      <div class="toc-text">${s.title}</div>
+      <div class="toc-desc">${s.desc}</div>
+    </div>
+  `;
+  div.addEventListener('click', () => showSlide(i));
+  tocList.appendChild(div);
+});
+
+// ── 슬라이드 전환
+function showSlide(idx) {
+  document.querySelectorAll('.slide').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+  const slide = document.querySelector(`.slide[data-slide="${idx}"]`);
+  const btn   = document.querySelector(`.nav-btn[data-slide="${idx}"]`);
+
+  if (slide) slide.classList.add('active');
+  if (btn)   btn.classList.add('active');
+
+  // 모바일에서는 사이드바 닫고 상단으로 스크롤
+  if (window.innerWidth <= 720) {
+    closeSidebar();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+// ── 모바일 사이드바 토글
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const ham     = document.getElementById('hamburger');
+  const isOpen  = sidebar.classList.contains('open');
+  if (isOpen) {
+    closeSidebar();
+  } else {
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+    ham.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('active');
+  document.getElementById('hamburger').classList.remove('open');
+  document.body.style.overflow = '';
+}
+</script>
+
+<!-- ═══════════════ MOBILE HEADER ═══════════════ -->
+<div id="mobile-header">
+  <h1>📋 프롬프트 가이드</h1>
+  <button id="hamburger" onclick="toggleSidebar()" aria-label="메뉴">
+    <span></span><span></span><span></span>
+  </button>
+</div>
+
+<!-- Sidebar overlay (mobile) -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- API Key Modal -->
+<div id="api-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+  <div style="position:relative;background:#fff;border-radius:24px;padding:40px 36px 36px;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,0.22);text-align:center;">
+
+    <!-- ✕ 닫기 버튼 -->
+    <button onclick="closeApiModal()" title="닫기"
+      style="position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:none;background:#f0ede8;color:#888;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.18s,color 0.18s;line-height:1;"
+      onmouseover="this.style.background='#e0dbd5';this.style.color='#333'"
+      onmouseout="this.style.background='#f0ede8';this.style.color='#888'">✕</button>
+
+    <!-- 쿼카 아이콘 (모달용) -->
+    <svg width="72" height="72" viewBox="0 0 72 72" style="margin-bottom:12px;">
+      <!-- 귀 (둥글고 작은 쿼카 귀) -->
+      <ellipse cx="18" cy="18" rx="11" ry="13" fill="#c8a87a"/>
+      <ellipse cx="18" cy="18" rx="6"  ry="8"  fill="#e8c8a0"/>
+      <ellipse cx="54" cy="18" rx="11" ry="13" fill="#c8a87a"/>
+      <ellipse cx="54" cy="18" rx="6"  ry="8"  fill="#e8c8a0"/>
+      <!-- 머리 -->
+      <ellipse cx="36" cy="44" rx="26" ry="24" fill="#d4aa7a"/>
+      <!-- 주둥이 (쿼카 특유의 볼록한 주둥이) -->
+      <ellipse cx="36" cy="52" rx="16" ry="11" fill="#c49060"/>
+      <!-- 볼 홍조 -->
+      <ellipse cx="20" cy="50" rx="7" ry="5" fill="#e89060" opacity="0.35"/>
+      <ellipse cx="52" cy="50" rx="7" ry="5" fill="#e89060" opacity="0.35"/>
+      <!-- 눈 (놀란 동그란 눈 - 이미지1 스타일) -->
+      <ellipse cx="26" cy="38" rx="7" ry="8" fill="#fff"/>
+      <circle  cx="26" cy="40" r="5"  fill="#2a1a0a"/>
+      <circle  cx="28" cy="37" r="2"  fill="#fff"/>
+      <ellipse cx="46" cy="38" rx="7" ry="8" fill="#fff"/>
+      <circle  cx="46" cy="40" r="5"  fill="#2a1a0a"/>
+      <circle  cx="48" cy="37" r="2"  fill="#fff"/>
+      <!-- 코 -->
+      <ellipse cx="36" cy="50" rx="5" ry="3.5" fill="#8a5030"/>
+      <!-- 입 (벌린 입 - 놀란 표정) -->
+      <ellipse cx="36" cy="57" rx="7" ry="5" fill="#6a2818"/>
+      <ellipse cx="36" cy="58" rx="5" ry="3" fill="#8a3820"/>
+    </svg>
+
+    <h3 style="font-size:19px;font-weight:900;margin-bottom:8px;color:#1a1814;">OpenAI API 키 입력</h3>
+    <p style="font-size:13px;color:#888;margin-bottom:20px;line-height:1.6;">쿼카 챗봇이 답변하려면 API 키가 필요합니다.<br>키는 브라우저에만 저장됩니다.</p>
+    <input id="api-key-input" type="password" placeholder="sk-..." style="width:100%;padding:12px 16px;border:2px solid #e0dbd0;border-radius:12px;font-size:14px;outline:none;margin-bottom:12px;font-family:monospace;transition:border 0.2s;"/>
+    <button onclick="saveApiKey()" style="width:100%;padding:13px;background:#8a5c2a;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:background 0.2s;"
+      onmouseover="this.style.background='#6a3c0a'" onmouseout="this.style.background='#8a5c2a'">저장하고 시작하기</button>
+    <p id="api-error" style="color:#e85d2f;font-size:12px;margin-top:8px;display:none;">올바른 API 키를 입력해 주세요 (sk- 로 시작)</p>
+  </div>
+</div>
+
+<!-- Chat Window -->
+<div id="chat-window" style="display:none;position:fixed;bottom:160px;right:28px;width:368px;height:520px;background:#fff;border-radius:24px;box-shadow:0 16px 56px rgba(80,40,10,0.16);z-index:9000;flex-direction:column;overflow:hidden;border:1.5px solid #e8d8c0;">
+  <!-- Header -->
+  <div style="background:linear-gradient(135deg,#b87840,#7a4818);padding:18px 20px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;">
+    <div style="position:absolute;inset:0;opacity:0.07;background:repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 1px,transparent 8px);"></div>
+    <!-- 헤더 아바타 (작은 쿼카) -->
+    <svg width="42" height="42" viewBox="0 0 42 42" style="flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.25));">
+      <circle cx="21" cy="21" r="21" fill="rgba(255,255,255,0.15)"/>
+      <ellipse cx="10" cy="12" rx="7" ry="8"  fill="#c8a87a"/>
+      <ellipse cx="10" cy="12" rx="4" ry="5"  fill="#e8c8a0"/>
+      <ellipse cx="32" cy="12" rx="7" ry="8"  fill="#c8a87a"/>
+      <ellipse cx="32" cy="12" rx="4" ry="5"  fill="#e8c8a0"/>
+      <ellipse cx="21" cy="26" rx="16" ry="15" fill="#d4aa7a"/>
+      <ellipse cx="21" cy="31" rx="10" ry="8"  fill="#c49060"/>
+      <ellipse cx="13" cy="23" rx="4.5" ry="5" fill="#fff"/>
+      <circle  cx="13" cy="24" r="3"   fill="#2a1a0a"/>
+      <circle  cx="14" cy="22" r="1.2" fill="#fff"/>
+      <ellipse cx="29" cy="23" rx="4.5" ry="5" fill="#fff"/>
+      <circle  cx="29" cy="24" r="3"   fill="#2a1a0a"/>
+      <circle  cx="30" cy="22" r="1.2" fill="#fff"/>
+      <ellipse cx="21" cy="30" rx="3.5" ry="2.5" fill="#8a5030"/>
+      <path d="M 16 34 Q 21 38 26 34" stroke="#c49060" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div style="position:relative;">
+      <div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:0.02em;">Quokka 챗봇</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:1px;">무엇이든 물어보세요!</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center;position:relative;">
+      <button onclick="clearChat()" title="대화 초기화" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">🗑</button>
+      <button onclick="resetApiKey()" title="API 키 변경" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">🔑</button>
+      <button onclick="toggleChat()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">✕</button>
+    </div>
+  </div>
+  <!-- Messages -->
+  <div id="chat-messages" style="flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:12px;background:#fdf8f2;"></div>
+  <!-- Input -->
+  <div style="padding:12px 14px;border-top:1.5px solid #e8d8c0;background:#fff;display:flex;gap:8px;align-items:flex-end;">
+    <textarea id="chat-input" placeholder="메시지를 입력하세요..." rows="1"
+      style="flex:1;border:1.5px solid #e8d8c0;border-radius:14px;padding:10px 14px;font-size:13px;font-family:'Noto Sans KR',sans-serif;resize:none;outline:none;max-height:100px;line-height:1.5;background:#fdf8f2;transition:border 0.2s,background 0.2s;"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button id="send-btn" onclick="sendMessage()" style="width:42px;height:42px;background:#8a5c2a;border:none;border-radius:14px;color:#fff;font-size:17px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background 0.2s;box-shadow:0 3px 10px rgba(138,92,42,0.3);">➤</button>
+  </div>
+</div>
+
+<!-- ── 쿼카 캐릭터 버튼 ── -->
+<div id="chatbot-btn" onclick="onCharacterClick()" style="position:fixed;bottom:28px;right:32px;z-index:9001;cursor:pointer;user-select:none;width:100px;height:110px;">
+
+  <!-- 말풍선 -->
+  <div id="quokka-bubble" style="
+    position:absolute;bottom:108px;right:-8px;
+    background:#fff;border:2px solid #e8d0a8;border-radius:16px;
+    padding:9px 16px;white-space:nowrap;
+    opacity:0;transform:translateY(8px) scale(0.88);
+    transition:all 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events:none;box-shadow:0 6px 24px rgba(138,92,42,0.14);
+    transform-origin:bottom center;">
+    <span style="font-size:14px;font-weight:900;color:#8a5c2a;font-family:'Noto Sans KR',sans-serif;letter-spacing:0.04em;">Hi there! 🐻</span>
+    <div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%) rotate(45deg);width:12px;height:12px;background:#fff;border-right:2px solid #e8d0a8;border-bottom:2px solid #e8d0a8;"></div>
+  </div>
+
+  <!-- 쿼카 SVG -->
+  <svg id="quokka-svg" width="100" height="110" viewBox="0 0 100 110"
+       style="overflow:visible;filter:drop-shadow(0 8px 28px rgba(120,70,20,0.22));">
+
+    <!-- ── 귀 (작고 둥근 쿼카 귀) ── -->
+    <ellipse cx="22" cy="22" rx="16" ry="18" fill="#c8a87a"/>
+    <ellipse cx="22" cy="22" rx="9"  ry="11" fill="#e8c8a0"/>
+    <ellipse cx="78" cy="22" rx="16" ry="18" fill="#c8a87a"/>
+    <ellipse cx="78" cy="22" rx="9"  ry="11" fill="#e8c8a0"/>
+
+    <!-- ── 머리 ── -->
+    <ellipse cx="50" cy="66" rx="42" ry="40" fill="#d4aa7a"/>
+
+    <!-- 이마 밝은 영역 -->
+    <ellipse cx="50" cy="48" rx="22" ry="14" fill="#e0c090" opacity="0.6"/>
+
+    <!-- 볼 홍조 -->
+    <ellipse cx="22" cy="72" rx="12" ry="8" fill="#e09060" opacity="0.3"/>
+    <ellipse cx="78" cy="72" rx="12" ry="8" fill="#e09060" opacity="0.3"/>
+
+    <!-- 주둥이 (특유의 볼록하고 넓은 주둥이) -->
+    <ellipse cx="50" cy="80" rx="22" ry="16" fill="#c49060"/>
+
+    <!-- ── 평상시 눈 : 이미지1 — 놀란 동그란 눈 ── -->
+    <g id="q-eyes-normal">
+      <ellipse cx="34" cy="60" rx="10" ry="11" fill="#fff"/>
+      <circle  cx="34" cy="62" r="7"   fill="#2a1a0a"/>
+      <circle  cx="37" cy="58" r="3"   fill="#fff"/>
+      <circle  cx="38" cy="63" r="1.2" fill="rgba(255,255,255,0.5)"/>
+
+      <ellipse cx="66" cy="60" rx="10" ry="11" fill="#fff"/>
+      <circle  cx="66" cy="62" r="7"   fill="#2a1a0a"/>
+      <circle  cx="69" cy="58" r="3"   fill="#fff"/>
+      <circle  cx="70" cy="63" r="1.2" fill="rgba(255,255,255,0.5)"/>
+    </g>
+
+    <!-- ── 호버 눈 : 이미지2 — 눈 감고 웃음 ── -->
+    <g id="q-eyes-smile" style="opacity:0;transition:opacity 0.18s;">
+      <!-- 왼눈 초승달 -->
+      <path d="M 25 63 Q 34 52 43 63" stroke="#2a1a0a" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- 오른눈 초승달 -->
+      <path d="M 57 63 Q 66 52 75 63" stroke="#2a1a0a" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- 코 -->
+    <ellipse cx="50" cy="74" rx="7" ry="5" fill="#8a5030"/>
+    <ellipse cx="48" cy="72" rx="2.5" ry="1.8" fill="rgba(255,255,255,0.3)"/>
+
+    <!-- ── 평상시 입 : 이미지1 — 동그랗게 벌린 입 ── -->
+    <g id="q-mouth-normal">
+      <ellipse cx="50" cy="88" rx="10" ry="8" fill="#6a2818"/>
+      <ellipse cx="50" cy="89" rx="7"  ry="5" fill="#8a3820"/>
+    </g>
+
+    <!-- ── 호버 입 : 이미지2 — 활짝 웃는 입 ── -->
+    <g id="q-mouth-smile" style="opacity:0;transition:opacity 0.18s;">
+      <path d="M 32 84 Q 50 100 68 84" fill="#6a2818" stroke="none"/>
+      <path d="M 33 84 Q 50 98 67 84" fill="#8a3820" stroke="none"/>
+      <!-- 치아 -->
+      <rect x="40" y="84" width="8"  height="6" rx="2" fill="#fff" opacity="0.9"/>
+      <rect x="50" y="84" width="8"  height="6" rx="2" fill="#fff" opacity="0.9"/>
+    </g>
+
+  </svg>
+</div>
+
+<style>
+/* ════ 쿼카 애니메이션 ════ */
+
+@keyframes quokka-float {
+  0%,100% { transform: translateY(0px)  rotate(0deg); }
+  30%     { transform: translateY(-9px) rotate(-1deg); }
+  70%     { transform: translateY(-6px) rotate(1deg); }
+}
+@keyframes quokka-blink {
+  0%,88%,100% { transform: scaleY(1); }
+  92%          { transform: scaleY(0.06); }
+}
+@keyframes chat-in {
+  from { opacity:0; transform:scale(0.88) translateY(16px); transform-origin:bottom right; }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+@keyframes dot-bounce {
+  0%,100% { transform:translateY(0);    opacity:0.4; }
+  50%     { transform:translateY(-5px); opacity:1;   }
+}
+
+/* 기본 상태 */
+#chatbot-btn { animation: quokka-float 3.2s ease-in-out infinite; }
+#q-eyes-normal ellipse { animation: quokka-blink 4.5s ease-in-out infinite; transform-origin: center; }
+
+/* 호버 */
+#chatbot-btn:hover {
+  animation: none;
+  transform: translateY(-6px) scale(1.05);
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+#chatbot-btn:hover #quokka-bubble  { opacity:1 !important; transform:translateY(0) scale(1) !important; }
+#chatbot-btn:hover #q-eyes-normal  { opacity:0; transition:opacity 0.18s; }
+#chatbot-btn:hover #q-eyes-smile   { opacity:1 !important; }
+#chatbot-btn:hover #q-mouth-normal { opacity:0; transition:opacity 0.18s; }
+#chatbot-btn:hover #q-mouth-smile  { opacity:1 !important; }
+
+/* 채팅창 */
+#chat-window.open {
+  display:flex !important;
+  animation: chat-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+/* 메시지 */
+.msg-user {
+  align-self:flex-end;
+  background:linear-gradient(135deg,#b87840,#7a4818);
+  color:#fff;padding:10px 15px;
+  border-radius:18px 18px 4px 18px;
+  max-width:82%;font-size:13px;line-height:1.65;
+  word-break:break-word;box-shadow:0 2px 8px rgba(120,60,10,0.2);
+}
+.msg-bot {
+  align-self:flex-start;background:#fff;color:#1a1814;
+  padding:11px 15px;border-radius:4px 18px 18px 18px;
+  max-width:82%;font-size:13px;line-height:1.65;
+  border:1.5px solid #e8d8c0;word-break:break-word;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+.msg-bot-wrap { display:flex;gap:9px;align-items:flex-start; }
+.bot-avatar {
+  width:30px;height:30px;
+  background:linear-gradient(135deg,#d4aa7a,#9a6030);
+  border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;border:1.5px solid #e8c890;
+  box-shadow:0 2px 6px rgba(138,92,42,0.2);
+}
+.typing-indicator {
+  display:flex;gap:5px;padding:13px 16px;
+  background:#fff;border-radius:4px 18px 18px 18px;
+  border:1.5px solid #e8d8c0;width:fit-content;
+}
+.typing-dot {
+  width:7px;height:7px;border-radius:50%;background:#c8a060;
+  animation:dot-bounce 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay:0.22s; }
+.typing-dot:nth-child(3) { animation-delay:0.44s; }
+
+#chat-messages::-webkit-scrollbar { width:4px; }
+#chat-messages::-webkit-scrollbar-thumb { background:#e8d0a8;border-radius:4px; }
+#chat-input:focus { border-color:#8a5c2a !important; background:#fff !important; }
+#send-btn:hover   { background:#6a3c0a !important; }
+#send-btn:disabled{ background:#ccc !important; cursor:not-allowed; }
+</style>
+
+<script>
+// ── 상태
+let chatOpen = false;
+let chatHistory = [];
+const STORAGE_KEY     = 'quokka_chat_history';
+const API_KEY_STORAGE = 'quokka_openai_key';
+
+// ── 초기화
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      chatHistory = JSON.parse(saved);
+      chatHistory.forEach(m => {
+        if (m.role === 'user') appendUserMsg(m.content, false);
+        else if (m.role === 'assistant') appendBotMsg(m.content, false);
+      });
+    } catch(e) { chatHistory = []; }
+  }
+  if (chatHistory.length === 0) {
+    setTimeout(() => {
+      appendBotMsg('안녕하세요! 저는 **Quokka 챗봇**이에요 🐨\n무엇이든 편하게 물어보세요!', false);
+    }, 600);
+  }
+});
+
+// ── 캐릭터 클릭
+function onCharacterClick() {
+  const key = localStorage.getItem(API_KEY_STORAGE);
+  if (!key) showApiModal();
+  else toggleChat();
+}
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  const win = document.getElementById('chat-window');
+  if (chatOpen) {
+    win.style.display = 'flex';
+    win.classList.add('open');
+    setTimeout(() => document.getElementById('chat-input').focus(), 320);
+    scrollToBottom();
+  } else {
+    win.style.display = 'none';
+    win.classList.remove('open');
+  }
+}
+
+// ── API Key Modal
+function showApiModal() {
+  const m = document.getElementById('api-modal');
+  m.style.display = 'flex';
+  setTimeout(() => document.getElementById('api-key-input').focus(), 120);
+}
+function closeApiModal() {
+  document.getElementById('api-modal').style.display = 'none';
+}
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  const err = document.getElementById('api-error');
+  if (!val.startsWith('sk-') || val.length < 20) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  localStorage.setItem(API_KEY_STORAGE, val);
+  document.getElementById('api-modal').style.display = 'none';
+  toggleChat();
+}
+document.getElementById('api-key-input').addEventListener('keydown', e => { if (e.key === 'Enter') saveApiKey(); });
+
+// 모달 외부 클릭 시 닫기
+document.getElementById('api-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeApiModal();
+});
+
+function resetApiKey() {
+  localStorage.removeItem(API_KEY_STORAGE);
+  chatOpen = false;
+  document.getElementById('chat-window').style.display = 'none';
+  showApiModal();
+}
+
+// ── 메시지 전송
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const apiKey = localStorage.getItem(API_KEY_STORAGE);
+  if (!apiKey) { showApiModal(); return; }
+
+  input.value = ''; input.style.height = 'auto';
+  appendUserMsg(text, true);
+  chatHistory.push({ role: 'user', content: text });
+
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  const typingId = showTyping();
+
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: '당신은 귀엽고 친근한 쿼카 캐릭터 챗봇입니다. 어떤 질문이든 명확하고 유익하게 한국어로 답변해 주세요. 답변은 간결하되 따뜻하고 밝은 톤을 유지해 주세요.' },
+          ...chatHistory
+        ],
+        max_tokens: 1000
+      })
+    });
+    removeTyping(typingId);
+    if (!res.ok) {
+      const err = await res.json();
+      appendBotMsg(`❌ **오류:** ${err.error?.message || '오류가 발생했습니다.'}`, true);
+    } else {
+      const data = await res.json();
+      const reply = data.choices[0].message.content;
+      appendBotMsg(reply, true);
+      chatHistory.push({ role: 'assistant', content: reply });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
+    }
+  } catch(e) {
+    removeTyping(typingId);
+    appendBotMsg('❌ 네트워크 오류가 발생했습니다. 인터넷 연결을 확인해 주세요.', true);
+  }
+  btn.disabled = false;
+  scrollToBottom();
+}
+
+// ── UI 헬퍼
+function appendUserMsg(text, animate) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg-user';
+  div.style.cssText = `opacity:${animate?'0':'1'};transform:${animate?'translateY(8px)':'none'};transition:all 0.2s;`;
+  div.textContent = text;
+  msgs.appendChild(div);
+  if (animate) requestAnimationFrame(() => { div.style.opacity='1'; div.style.transform='translateY(0)'; });
+  scrollToBottom();
+}
+function appendBotMsg(text, animate) {
+  const msgs = document.getElementById('chat-messages');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-bot-wrap';
+  wrap.style.cssText = `opacity:${animate?'0':'1'};transform:${animate?'translateY(8px)':'none'};transition:all 0.25s;`;
+  const avatar = document.createElement('div');
+  avatar.className = 'bot-avatar';
+  avatar.textContent = '🐨';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bot';
+  bubble.innerHTML = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n/g,'<br>');
+  wrap.appendChild(avatar); wrap.appendChild(bubble);
+  msgs.appendChild(wrap);
+  if (animate) requestAnimationFrame(() => { wrap.style.opacity='1'; wrap.style.transform='translateY(0)'; });
+  scrollToBottom();
+}
+function showTyping() {
+  const msgs = document.getElementById('chat-messages');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-bot-wrap';
+  const id = 'typing-' + Date.now();
+  wrap.id = id;
+  const avatar = document.createElement('div');
+  avatar.className = 'bot-avatar'; avatar.textContent = '🐨';
+  const ind = document.createElement('div');
+  ind.className = 'typing-indicator';
+  ind.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  wrap.appendChild(avatar); wrap.appendChild(ind);
+  msgs.appendChild(wrap);
+  scrollToBottom();
+  return id;
+}
+function removeTyping(id) { const el = document.getElementById(id); if (el) el.remove(); }
+function scrollToBottom() { const m = document.getElementById('chat-messages'); m.scrollTop = m.scrollHeight; }
+function clearChat() {
+  if (!confirm('대화 기록을 모두 삭제할까요?')) return;
+  chatHistory = []; localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('chat-messages').innerHTML = '';
+  appendBotMsg('대화가 초기화되었습니다. 새로운 질문을 해주세요! 🐨', false);
+}
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+</script>
+</body>
+</html>
